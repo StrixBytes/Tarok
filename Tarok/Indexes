@@ -1,0 +1,14 @@
+Indexes
+
+Menu indexes
+Play Button 0;
+Game indexes
+
+Player Cards 1-12;
+BACKGROUNDINDEXL = 13;
+BACKGROUNDINDEXR = 14;
+BACKGROUNDINDEXT = 15;
+STARTGAMEINDEX = 28;
+Contracts 16-27;
+
+flag removals!!

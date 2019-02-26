@@ -14,7 +14,6 @@ public class ImageLoader {
 	private HashMap<Integer, Integer> width = new HashMap<Integer, Integer>();
 	private HashMap<Integer, Integer> height = new HashMap<Integer, Integer>();
 	private HashMap<Integer, Boolean> flag = new HashMap<Integer, Boolean>();
-
 	public ImageLoader() {
 	}
 
@@ -56,7 +55,7 @@ public class ImageLoader {
 		flag.clear();
 	}
 	public void resetFlag(int index) {
-		flag.put(index, false);
+		flag.put(index, null);
 	}
 
 	public boolean isFlag(int index) {
@@ -65,6 +64,13 @@ public class ImageLoader {
 			isflag=true;
 		}
 		return isflag;
+	}
+	
+	public void clearBounds(int index) {
+		x.put(index, 0);
+		y.put(index, 0);
+		width.put(index, 0);
+		height.put(index, 0);
 	}
 
 	public Rectangle getBounds(int index) {
@@ -101,6 +107,7 @@ public class ImageLoader {
 	}
 
 	public void setImgIndex(int imgIndex) {
+		clearBounds(imgIndex);
 		if (imgIndex>maxIndex)
 			maxIndex = imgIndex;
 		this.imgIndex = imgIndex;
