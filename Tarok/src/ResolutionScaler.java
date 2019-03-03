@@ -1,12 +1,10 @@
 import java.awt.Dimension;
-import java.awt.Insets;
 import java.awt.Toolkit;
 
 public class ResolutionScaler {
 	private static Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-	private static Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(TarokExec.board.getGraphicsConfiguration());
-	private static int screenWidth = screenSize.width - insets.left - insets.right;
-	private static int screenHeight = screenSize.height - insets.top - insets.bottom;
+	private static int screenWidth = screenSize.width;
+	private static int screenHeight = screenSize.height;
 	private static Dimension screenResolution = new Dimension(screenWidth, screenHeight);
 
 	public static int percentToWidth(int percent) {

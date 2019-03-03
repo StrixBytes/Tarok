@@ -14,11 +14,12 @@ public class ImageLoader {
 	private HashMap<Integer, Integer> width = new HashMap<Integer, Integer>();
 	private HashMap<Integer, Integer> height = new HashMap<Integer, Integer>();
 	private HashMap<Integer, Boolean> flag = new HashMap<Integer, Boolean>();
+
 	public ImageLoader() {
 	}
 
 	public void loadImage(String imgName) {
-//		System.out.println("Loading " + imgIndex);
+//		System.out.println("Loading " + imgIndex + " "+ imgName);
 		URL imageUrl = this.getClass().getResource(imgName);
 		ImageIcon ii = new ImageIcon(imageUrl);
 		img.put(imgIndex, ii.getImage());
@@ -37,7 +38,7 @@ public class ImageLoader {
 		double ratio = (double) getWidth(-1) / (double) getHeight(-1);
 		return (int) (height * ratio);
 	}
-	
+
 	public int getNewImageHeight(int width) {
 		double ratio = (double) getHeight(-1) / (double) getWidth(-1);
 		return (int) (width * ratio);
@@ -54,18 +55,19 @@ public class ImageLoader {
 	public void resetAllFlags() {
 		flag.clear();
 	}
+
 	public void resetFlag(int index) {
 		flag.put(index, null);
 	}
 
 	public boolean isFlag(int index) {
 		boolean isflag = false;
-		if (flag.get(index)!=null) {
-			isflag=true;
+		if (flag.get(index) != null) {
+			isflag = true;
 		}
 		return isflag;
 	}
-	
+
 	public void clearBounds(int index) {
 		x.put(index, 0);
 		y.put(index, 0);
@@ -108,7 +110,7 @@ public class ImageLoader {
 
 	public void setImgIndex(int imgIndex) {
 		clearBounds(imgIndex);
-		if (imgIndex>maxIndex)
+		if (imgIndex > maxIndex)
 			maxIndex = imgIndex;
 		this.imgIndex = imgIndex;
 	}

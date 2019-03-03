@@ -59,11 +59,11 @@ public class GameLogic {
 	public int talonSplitter() {
 		int split = 0;
 		if (gamePicked=="One")
-			split = 6;
+			split = 1;
 		else if (gamePicked=="Two")
-			split = 3;
-		else if (gamePicked=="Three")
 			split = 2;
+		else if (gamePicked=="Three")
+			split = 3;
 		return split;
 	}
 

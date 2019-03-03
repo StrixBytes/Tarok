@@ -28,7 +28,7 @@ public class Board extends JPanel {
 	}
 
 	private void initBoard() {
-
+		addKeyListener(new ClickAdapter());
 		setFocusable(true);
 		setBackground(Color.BLACK);
 		inmenu = true;
@@ -126,14 +126,45 @@ public class Board extends JPanel {
 					ResolutionScaler.percentToHeight(50) - startGameHeight / 2);
 			g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
 		} else if (il.isFlag(STARTGAMEINDEX)) {
-			for (int i = 0; i < 6; i++) {
-				il.setImgIndex(32 + i);
-				il.loadImage(ct.cardToImage(cards.get(48 + i)));
-				il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
-				il.setCoordinates(-1, ResolutionScaler.percentToWidth(29 + 6 * i),
-						ResolutionScaler.percentToHeight(45));
-				g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+			if (gl.talonSplitter() == 1)
+				for (int i = 0; i < 6; i++) {
+					il.setImgIndex(32 + i);
+					il.loadImage(ct.cardToImage(cards.get(48 + i)));
+					il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
+					il.setCoordinates(-1, ResolutionScaler.percentToWidth(20 + 10 * i),
+							ResolutionScaler.percentToHeight(45));
+					g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
 
+				}
+			if (gl.talonSplitter() == 3) {
+				int j = 0;
+				for (int i = 0; i < 6; i++) {
+
+					il.setImgIndex(32 + i);
+					il.loadImage(ct.cardToImage(cards.get(48 + i)));
+					il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
+					if (i == 3)
+						j += 6;
+					il.setCoordinates(-1, ResolutionScaler.percentToWidth(29 + j + 6 * i),
+							ResolutionScaler.percentToHeight(45));
+					g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+
+				}
+			}
+			if (gl.talonSplitter() == 2) {
+				int j = 0;
+				for (int i = 0; i < 6; i++) {
+
+					il.setImgIndex(32 + i);
+					il.loadImage(ct.cardToImage(cards.get(48 + i)));
+					il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
+					if (i == 2||i==4)
+						j += 6;
+					il.setCoordinates(-1, ResolutionScaler.percentToWidth(26 + j + 6 * i),
+							ResolutionScaler.percentToHeight(45));
+					g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+
+				}
 			}
 		}
 	}
@@ -194,7 +225,7 @@ public class Board extends JPanel {
 
 	private void removeContractBounds() {
 		for (int i = 0; i < 12; i++)
-			il.clearBounds(16+i);
+			il.clearBounds(16 + i);
 		System.out.println("Contract Flags Removed");
 	}
 
@@ -205,7 +236,9 @@ public class Board extends JPanel {
 			if (il.getX(i) < cX && cX < (il.getX(i) + il.getWidth(i)))
 				if (il.getY(i) < cY && cY < (il.getY(i) + il.getHeight(i))) {
 					il.triggerFlag(i);
-					System.out.println(il.isFlag(i) + " at " + i);
+					System.out.println(
+							il.isFlag(i) + " at Flag " + i + " at " + il.getX(i) + " - " + (il.getX(i) + il.getWidth(i))
+									+ " and " + il.getY(i) + " - " + (il.getY(i) + il.getHeight(i)));
 				}
 		}
 		repaint();

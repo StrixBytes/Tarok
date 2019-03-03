@@ -13,6 +13,7 @@ public class TarokExec extends JFrame {
 		setTitle("Best Tarok Computer Game In The Universe*                     *patent pending");
 		setSize(ResolutionScaler.getScreenResolution());
 		setExtendedState(this.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+		setUndecorated(true);
 		setResizable(false);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 
