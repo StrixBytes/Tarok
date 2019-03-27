@@ -7,21 +7,26 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JPanel;
+import javax.xml.ws.RespectBindingFeature;
 
 public class Board extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private boolean inmenu;
 	private boolean ingame;
 	private boolean shuffled;
+	private boolean contractsRemoved;
+	private boolean talonSwitched;
+	private boolean kingPicked;
 	private List<Integer> cards = new ArrayList<>();;
 	private CardTranslator ct;
 	private GameLogic gl;
 	ImageLoader il = new ImageLoader();
 	private int cardWidth, LRplayerHeight, topPlayerWidth, startGameWidth, contractWidth;
+	private int talonSwap = 0;
+	int excludeList[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	private final int BACKGROUNDINDEXL = 13;
 	private final int BACKGROUNDINDEXR = 14;
 	private final int BACKGROUNDINDEXT = 15;
-	private final int STARTGAMEINDEX = 28;
 
 	public Board() {
 		initBoard();
@@ -49,14 +54,47 @@ public class Board extends JPanel {
 		for (int i = 0; i < 54; i++)
 			cards.add(i);
 		Collections.shuffle(cards);
-		for (int i : cards)
-			System.out.print(i + " ");
+		printDeckOrder();
 		System.out.println();
 		ct = new CardTranslator();
 		gl = new GameLogic(il, cards);
-		System.out.println(il.toString() + " " + cards.toString());
 
 		shuffled = true;
+	}
+
+	private void printDeckOrder() {
+		System.out.print("DeckOrder: ");
+		for (int i : cards)
+			System.out.print(i + " ");
+	}
+
+	private void drawClickable(Graphics g2, int index, String imgName, int width, int xInPercent, int yInPercent) {
+		il.setImgIndex(index);
+		il.loadImage(imgName);
+		il.setDimensions(-1, width, il.getNewImageHeight(width));
+		il.setCoordinates(-1, ResolutionScaler.percentToWidth(xInPercent),
+				ResolutionScaler.percentToHeight(yInPercent));
+		g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+	}
+
+	private void drawClickableReverse(Graphics g2, int index, String imgName, int height, int xInPercent,
+			int yInPercent) {
+		il.setImgIndex(index);
+		il.loadImage(imgName);
+		il.setDimensions(-1, il.getNewImageWidth(height), height);
+		il.setCoordinates(-1, ResolutionScaler.percentToWidth(xInPercent),
+				ResolutionScaler.percentToHeight(yInPercent));
+		g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+	}
+
+	private void drawCard(Graphics g2, int index, int cardIndex, int xInPercent, int yInPercent) {
+		il.setImgIndex(index);
+		il.loadImage(ct.cardToImage(cardIndex));
+		il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
+		il.setCoordinates(-1, ResolutionScaler.percentToWidth(xInPercent),
+				ResolutionScaler.percentToHeight(yInPercent));
+		g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+
 	}
 
 	@Override
@@ -83,10 +121,15 @@ public class Board extends JPanel {
 		setBackground(Color.GRAY);
 		if (gl.contractNotPicked())
 			showContracts(g2);
-		if (gl.showTalon()) {
-			removeContractBounds();
+		if (gl.showTalon() && !talonSwitched) {
+			if (!contractsRemoved)
+				removeContractBounds();
 			showTalon(g2);
 		}
+		if (gl.pickKing() && talonSwitched && !kingPicked) {
+			showKings(g2);
+		}
+
 		drawPlayerHand(g2);
 		drawBotHands(g2);
 
@@ -102,108 +145,109 @@ public class Board extends JPanel {
 				"/GameComponents/contractButtonColorValat.png", "/GameComponents/contractButtonValat.png" };
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 4; j++) {
-				il.setImgIndex(16 + index);
-				il.loadImage(pngName[index]);
-				il.setDimensions(-1, contractWidth, il.getNewImageHeight(contractWidth));
-				il.setCoordinates(-1, ResolutionScaler.percentToWidth(30 + j * 10),
-						ResolutionScaler.percentToHeight(20 + i * 20));
-				g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+				drawClickable(g2, 16 + index, pngName[index], contractWidth, 30 + j * 10, 20 + i * 20);
 				index++;
 			}
 		}
 
 		gl.contractPicker();
 		repaint();
+
 	}
 
 	private void showTalon(Graphics2D g2) {
-		if (!il.isFlag(STARTGAMEINDEX)) {
-			il.setImgIndex(STARTGAMEINDEX);
-			il.loadImage("/GameComponents/button1.png");
-			int startGameHeight = il.getNewImageHeight(startGameWidth);
-			il.setDimensions(-1, startGameWidth, startGameHeight);
-			il.setCoordinates(-1, ResolutionScaler.percentToWidth(50) - startGameWidth / 2,
-					ResolutionScaler.percentToHeight(50) - startGameHeight / 2);
-			g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
-		} else if (il.isFlag(STARTGAMEINDEX)) {
-			if (gl.talonSplitter() == 1)
-				for (int i = 0; i < 6; i++) {
-					il.setImgIndex(32 + i);
-					il.loadImage(ct.cardToImage(cards.get(48 + i)));
-					il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
-					il.setCoordinates(-1, ResolutionScaler.percentToWidth(20 + 10 * i),
-							ResolutionScaler.percentToHeight(45));
-					g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
 
-				}
-			if (gl.talonSplitter() == 3) {
-				int j = 0;
-				for (int i = 0; i < 6; i++) {
-
-					il.setImgIndex(32 + i);
-					il.loadImage(ct.cardToImage(cards.get(48 + i)));
-					il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
-					if (i == 3)
-						j += 6;
-					il.setCoordinates(-1, ResolutionScaler.percentToWidth(29 + j + 6 * i),
-							ResolutionScaler.percentToHeight(45));
-					g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
-
-				}
+		if (gl.talonSplitter() == 1)
+			for (int i = 0; i < 6; i++) {
+				drawCard(g2, 28 + i, cards.get(48 + i), 22 + 10 * i, 45);
 			}
-			if (gl.talonSplitter() == 2) {
-				int j = 0;
-				for (int i = 0; i < 6; i++) {
-
-					il.setImgIndex(32 + i);
-					il.loadImage(ct.cardToImage(cards.get(48 + i)));
-					il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
-					if (i == 2||i==4)
-						j += 6;
-					il.setCoordinates(-1, ResolutionScaler.percentToWidth(26 + j + 6 * i),
-							ResolutionScaler.percentToHeight(45));
-					g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
-
-				}
+		if (gl.talonSplitter() == 3) {
+			int j = 0;
+			for (int i = 0; i < 6; i++) {
+				if (i == 3)
+					j = 6;
+				drawCard(g2, 28 + i, cards.get(48 + i), 29 + j + 6 * i, 45);
 			}
 		}
+		if (gl.talonSplitter() == 2) {
+			int j = 0;
+			for (int i = 0; i < 6; i++) {
+				if (i == 2 || i == 4)
+					j += 6;
+				drawCard(g2, 28 + i, cards.get(48 + i), 26 + j + 6 * i, 45);
+			}
+		}
+		if (talonSwap < gl.talonSplitter()) {
+			drawClickable(g2, 34, "/GameComponents/button1.png", startGameWidth, 40, 30);
+			if (il.isFlag(34)) {
+				talonSwitched = true;
+				repaint();
+			}
+			talonSwitcher();
+		} else if (talonSwap == gl.talonSplitter()) {
+			talonSwitched = true;
+			repaint();
+		}
+	}
+
+	private void talonSwitcher() {
+
+		int cardIndexes[] = gl.switchWithTalon();
+		for (int j = 1; j < 13; j++) {
+			if (il.isFlag(j) && j != excludeList[j - 1] && cards.get(j - 1) > 21 && cards.get(j - 1) != 29
+					&& cards.get(j - 1) != 37 && cards.get(j - 1) != 45 && cards.get(j - 1) != 53) {
+				il.resetFlag(j);
+				excludeList[j - 1] = j;
+				Collections.swap(cards, j - 1, cardIndexes[talonSwap]);
+				talonSwap++;
+				repaint();
+			}
+		}
+
+	}
+
+	private void showKings(Graphics2D g2) {
+		for (int i = 0; i < 4; i++)
+			drawCard(g2, 35 + i, 29 + i * 8, 17 + 20 * i, 45);
+
+		if (il.isFlag(35))
+			gl.setKingPicked(29);
+		if (il.isFlag(36))
+			gl.setKingPicked(37);
+		if (il.isFlag(37))
+			gl.setKingPicked(45);
+		if (il.isFlag(38))
+			gl.setKingPicked(53);
+		if (gl.getKingPicked() != -1) {
+			kingPicked = true;
+			repaint();
+		}
+		System.out.println("King Picked " + ct.cardToImage(gl.getKingPicked()));
+
 	}
 
 	private void drawPlayerHand(Graphics2D g2) {
 		for (int i = 0; i < 12; i++) {
-			il.setImgIndex(1 + i);
-			il.loadImage(ct.cardToImage(cards.get(i)));
-			il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
-			il.setCoordinates(-1, ResolutionScaler.percentToWidth(14 + 6 * i), ResolutionScaler.percentToHeight(70));
-			g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+			drawCard(g2, 1 + i, cards.get(i), 14 + 6 * i, 70);
+
 		}
 	}
 
 	private void drawBotHands(Graphics2D g2) {
 		// Left Player
-		il.setImgIndex(BACKGROUNDINDEXL);
-		il.loadImage("/GameComponents/cardBackgroundL.png");
-		il.setDimensions(-1, il.getNewImageWidth(LRplayerHeight), LRplayerHeight);
 		for (int i = 0; i < 12; i++) {
-			il.setCoordinates(-1, ResolutionScaler.percentToWidth(2), ResolutionScaler.percentToHeight(28 + 3 * i));
-			g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+			drawClickableReverse(g2, BACKGROUNDINDEXL, "/GameComponents/cardBackgroundL.png", LRplayerHeight, 2,
+					28 + 3 * i);
 		}
 		// Right Player
-		il.setImgIndex(BACKGROUNDINDEXR);
-		il.loadImage("/GameComponents/cardBackgroundL.png");
-		il.setDimensions(-1, il.getNewImageWidth(LRplayerHeight), LRplayerHeight);
 		for (int i = 0; i < 12; i++) {
-			il.setCoordinates(-1, ResolutionScaler.percentToWidth(90), ResolutionScaler.percentToHeight(28 + 3 * i));
-			g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+			drawClickableReverse(g2, BACKGROUNDINDEXR, "/GameComponents/cardBackgroundL.png", LRplayerHeight, 88,
+					28 + 3 * i);
 		}
 
 		// Top Player
-		il.setImgIndex(BACKGROUNDINDEXT);
-		il.loadImage("/GameComponents/cardBackgroundP.png");
-		il.setDimensions(-1, topPlayerWidth, il.getNewImageHeight(topPlayerWidth));
 		for (int i = 0; i < 12; i++) {
-			il.setCoordinates(-1, ResolutionScaler.percentToWidth(32 + 3 * i), ResolutionScaler.percentToHeight(5));
-			g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+			drawClickable(g2, BACKGROUNDINDEXT, "/GameComponents/cardBackgroundP.png", topPlayerWidth, 32 + 3 * i, 3);
 		}
 	}
 
@@ -224,6 +268,7 @@ public class Board extends JPanel {
 	}
 
 	private void removeContractBounds() {
+		contractsRemoved = true;
 		for (int i = 0; i < 12; i++)
 			il.clearBounds(16 + i);
 		System.out.println("Contract Flags Removed");

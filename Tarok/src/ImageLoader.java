@@ -81,15 +81,6 @@ public class ImageLoader {
 		return new Rectangle(x.get(index), y.get(index), width.get(index), height.get(index));
 	}
 
-	public void setBounds(int index, int x, int y, int width, int height) {
-		if (index == -1)
-			index = imgIndex;
-		this.x.put(index, x);
-		this.y.put(index, y);
-		this.width.put(index, width);
-		this.height.put(index, height);
-	}
-
 	public void setCoordinates(int index, int x, int y) {
 		if (index == -1)
 			index = imgIndex;

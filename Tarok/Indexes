@@ -8,7 +8,7 @@ Player Cards 1-12;
 BACKGROUNDINDEXL = 13;
 BACKGROUNDINDEXR = 14;
 BACKGROUNDINDEXT = 15;
-STARTGAMEINDEX = 28;
 Contracts 16-27;
-
+Talon 28-33;
+Kings 35-38;
 flag removals!!
