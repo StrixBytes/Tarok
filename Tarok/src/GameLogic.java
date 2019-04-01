@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 public class GameLogic {
@@ -6,10 +9,94 @@ public class GameLogic {
 	private List<Integer> cards;
 	private String gamePicked = null;
 	private int kingPicked = -1;
-	
+	private List<Integer> playerCards, lPlayerCards, tPlayerCards, rPlayerCards, talonCards;
+	private HashMap<String, Boolean> announcements;
+	private String partner;
+
 	public GameLogic(ImageLoader il, List<Integer> cards) {
 		this.il = il;
 		this.cards = cards;
+		dealCards();
+		initAnnouncements();
+	}
+
+	private void dealCards() {
+		playerCards = new ArrayList<Integer>(cards.subList(0, 12));
+		lPlayerCards = new ArrayList<Integer>(cards.subList(12, 24));
+		tPlayerCards = new ArrayList<Integer>(cards.subList(24, 36));
+		rPlayerCards = new ArrayList<Integer>(cards.subList(36, 48));
+		talonCards = new ArrayList<Integer>(cards.subList(48, 54));
+		// listPrint
+		System.out.println();
+		for (int i : playerCards)
+			System.out.print(i + " ");
+		System.out.println();
+		for (int i : lPlayerCards)
+			System.out.print(i + " ");
+		System.out.println();
+		for (int i : tPlayerCards)
+			System.out.print(i + " ");
+		System.out.println();
+		for (int i : rPlayerCards)
+			System.out.print(i + " ");
+		System.out.println();
+		for (int i : talonCards)
+			System.out.print(i + " ");
+		System.out.println();
+	}
+
+	private void initAnnouncements() {
+		announcements = new HashMap<String, Boolean>();
+		announcements.put("Kings", false);
+		announcements.put("KUltimo", false);
+		announcements.put("Pagat", false);
+		announcements.put("Trula", false);
+		announcements.put("Valat", false);
+
+	}
+
+	public void orderPlayerCards() {
+		Collections.sort(playerCards);
+	}
+
+	public List<Integer> getPlayerCards() {
+		return playerCards;
+	}
+
+	public void setPlayerCards(List<Integer> playerCards) {
+		this.playerCards = playerCards;
+	}
+
+	public List<Integer> getlPlayerCards() {
+		return lPlayerCards;
+	}
+
+	public void setlPlayerCards(List<Integer> lPlayerCards) {
+		this.lPlayerCards = lPlayerCards;
+	}
+
+	public List<Integer> gettPlayerCards() {
+		return tPlayerCards;
+	}
+
+	public void settPlayerCards(List<Integer> tPlayerCards) {
+		this.tPlayerCards = tPlayerCards;
+	}
+
+	public List<Integer> getrPlayerCards() {
+		return rPlayerCards;
+	}
+
+	public void setrPlayerCards(List<Integer> rPlayerCards) {
+		this.rPlayerCards = rPlayerCards;
+	}
+
+	public List<Integer> getTalonCards() {
+		return talonCards;
+	}
+
+	public void setTalonCards(List<Integer> talonCards) {
+		this.talonCards = talonCards;
 	}
 
 	public void contractPicker() {
@@ -57,12 +144,12 @@ public class GameLogic {
 			talonApplicable = false;
 		return talonApplicable;
 	}
-	
+
 	public boolean pickKing() {
 		boolean kingApplicable;
 		if (gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One")
 			kingApplicable = true;
-		else 
+		else
 			kingApplicable = false;
 		return kingApplicable;
 	}
@@ -87,9 +174,6 @@ public class GameLogic {
 
 	public int[] switchWithTalon() {
 		int[] index = { 0, 0, 0 };
-//		System.out.println(talonSplitter());
-//		for(int i = 28;i<34;i++)
-//			System.out.println(il.isFlag(i));
 		if (talonSplitter() == 1 && il.isFlag(28))
 			index[0] = 48;
 		else if (talonSplitter() == 1 && il.isFlag(29))
@@ -126,12 +210,68 @@ public class GameLogic {
 		return index;
 	}
 
+	public void kingPicker() {
+		if (il.isFlag(35))
+			setKingPicked(29);
+		if (il.isFlag(36))
+			setKingPicked(37);
+		if (il.isFlag(37))
+			setKingPicked(45);
+		if (il.isFlag(38))
+			setKingPicked(53);
+	}
+
 	public int getKingPicked() {
 		return kingPicked;
 	}
 
 	public void setKingPicked(int kingPicked) {
 		this.kingPicked = kingPicked;
+	}
+
+	public void findPartner() {
+		for (int i = 0; i < 12; i++) {
+			if (playerCards.get(i) == kingPicked)
+				partner = "SELF";
+		}
+		for (int i = 0; i < 12; i++) {
+			if (lPlayerCards.get(i) == kingPicked)
+				partner = "LEFT";
+		}
+		for (int i = 0; i < 12; i++) {
+			if (rPlayerCards.get(i) == kingPicked)
+				partner = "RIGHT";
+		}
+		for (int i = 0; i < 12; i++) {
+			if (tPlayerCards.get(i) == kingPicked)
+				partner = "TOP";
+		}
+	}
+
+	public String getPartner() {
+		return partner;
+	}
+
+	public boolean announce() {
+		boolean temp = false;
+		if (kingPicked != -1 || isSolo())
+			temp = true;
+		return temp;
+	}
+
+	public void announcePicker() {
+		if (il.isFlag(39))
+			announcements.put("Kings", true);
+		if (il.isFlag(40))
+			announcements.put("KUltimo", true);
+		if (il.isFlag(41))
+			announcements.put("Pagat", true);
+		if (il.isFlag(42))
+			announcements.put("Trula", true);
+		if (il.isFlag(43))
+			announcements.put("Valat", true);
+		System.out.print(announcements.entrySet() + "\n");
+
 	}
 
 }

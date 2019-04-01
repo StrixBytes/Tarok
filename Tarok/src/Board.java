@@ -1,13 +1,20 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Transparency;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import javax.swing.JPanel;
-import javax.xml.ws.RespectBindingFeature;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 
 public class Board extends JPanel {
 	private static final long serialVersionUID = 1L;
@@ -17,11 +24,12 @@ public class Board extends JPanel {
 	private boolean contractsRemoved;
 	private boolean talonSwitched;
 	private boolean kingPicked;
+	private boolean annClosed;
 	private List<Integer> cards = new ArrayList<>();;
 	private CardTranslator ct;
 	private GameLogic gl;
 	ImageLoader il = new ImageLoader();
-	private int cardWidth, LRplayerHeight, topPlayerWidth, startGameWidth, contractWidth;
+	private int cardWidth, LRplayerHeight, topPlayerWidth, startGameWidth, contractWidth, closeAnnWidth;
 	private int talonSwap = 0;
 	int excludeList[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	private final int BACKGROUNDINDEXL = 13;
@@ -46,6 +54,7 @@ public class Board extends JPanel {
 		topPlayerWidth = ResolutionScaler.percentToWidth(6);
 		startGameWidth = ResolutionScaler.percentToWidth(20);
 		contractWidth = ResolutionScaler.percentToWidth(10);
+		closeAnnWidth = ResolutionScaler.percentToWidth(4);
 
 	}
 
@@ -55,7 +64,6 @@ public class Board extends JPanel {
 			cards.add(i);
 		Collections.shuffle(cards);
 		printDeckOrder();
-		System.out.println();
 		ct = new CardTranslator();
 		gl = new GameLogic(il, cards);
 
@@ -97,6 +105,12 @@ public class Board extends JPanel {
 
 	}
 
+	private static GraphicsConfiguration getDefaultConfiguration() {
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		GraphicsDevice gd = ge.getDefaultScreenDevice();
+		return gd.getDefaultConfiguration();
+	}
+
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
@@ -130,6 +144,13 @@ public class Board extends JPanel {
 			showKings(g2);
 		}
 
+		if (talonSwitched && gl.announce() && !annClosed) {
+			showAnnouncements(g2);
+		}
+		if (annClosed) {
+			drawMainGame(g2);
+		}
+
 		drawPlayerHand(g2);
 		drawBotHands(g2);
 
@@ -156,17 +177,17 @@ public class Board extends JPanel {
 	}
 
 	private void showTalon(Graphics2D g2) {
-
+		removePlayerBounds();
 		if (gl.talonSplitter() == 1)
 			for (int i = 0; i < 6; i++) {
-				drawCard(g2, 28 + i, cards.get(48 + i), 22 + 10 * i, 45);
+				drawCard(g2, 28 + i, gl.getTalonCards().get(i), 22 + 10 * i, 45);
 			}
 		if (gl.talonSplitter() == 3) {
 			int j = 0;
 			for (int i = 0; i < 6; i++) {
 				if (i == 3)
 					j = 6;
-				drawCard(g2, 28 + i, cards.get(48 + i), 29 + j + 6 * i, 45);
+				drawCard(g2, 28 + i, gl.getTalonCards().get(i), 29 + j + 6 * i, 45);
 			}
 		}
 		if (gl.talonSplitter() == 2) {
@@ -174,7 +195,7 @@ public class Board extends JPanel {
 			for (int i = 0; i < 6; i++) {
 				if (i == 2 || i == 4)
 					j += 6;
-				drawCard(g2, 28 + i, cards.get(48 + i), 26 + j + 6 * i, 45);
+				drawCard(g2, 28 + i, gl.getTalonCards().get(i), 26 + j + 6 * i, 45);
 			}
 		}
 		if (talonSwap < gl.talonSplitter()) {
@@ -186,6 +207,7 @@ public class Board extends JPanel {
 			talonSwitcher();
 		} else if (talonSwap == gl.talonSplitter()) {
 			talonSwitched = true;
+			gl.orderPlayerCards();
 			repaint();
 		}
 	}
@@ -193,16 +215,19 @@ public class Board extends JPanel {
 	private void talonSwitcher() {
 
 		int cardIndexes[] = gl.switchWithTalon();
-		for (int j = 1; j < 13; j++) {
-			if (il.isFlag(j) && j != excludeList[j - 1] && cards.get(j - 1) > 21 && cards.get(j - 1) != 29
-					&& cards.get(j - 1) != 37 && cards.get(j - 1) != 45 && cards.get(j - 1) != 53) {
-				il.resetFlag(j);
-				excludeList[j - 1] = j;
-				Collections.swap(cards, j - 1, cardIndexes[talonSwap]);
-				talonSwap++;
-				repaint();
+		if (cardIndexes[talonSwap] != 0)
+			for (int j = 1; j < 13; j++) {
+				if (il.isFlag(j) && j != excludeList[j - 1] && cards.get(j - 1) > 21 && cards.get(j - 1) != 29
+						&& cards.get(j - 1) != 37 && cards.get(j - 1) != 45 && cards.get(j - 1) != 53) {
+					il.resetFlag(j);
+					excludeList[j - 1] = j;
+					Collections.swap(cards, j - 1, cardIndexes[talonSwap]);
+					gl.setPlayerCards(cards.subList(0, 12));
+					gl.setTalonCards(cards.subList(48, 54));
+					talonSwap++;
+					repaint();
+				}
 			}
-		}
 
 	}
 
@@ -210,15 +235,10 @@ public class Board extends JPanel {
 		for (int i = 0; i < 4; i++)
 			drawCard(g2, 35 + i, 29 + i * 8, 17 + 20 * i, 45);
 
-		if (il.isFlag(35))
-			gl.setKingPicked(29);
-		if (il.isFlag(36))
-			gl.setKingPicked(37);
-		if (il.isFlag(37))
-			gl.setKingPicked(45);
-		if (il.isFlag(38))
-			gl.setKingPicked(53);
+		gl.kingPicker();
 		if (gl.getKingPicked() != -1) {
+			gl.findPartner();
+			System.out.println(gl.getPartner());
 			kingPicked = true;
 			repaint();
 		}
@@ -226,27 +246,66 @@ public class Board extends JPanel {
 
 	}
 
+	private void showAnnouncements(Graphics2D g2) {
+		int index = 0;
+		String[] pngName = { "/GameComponents/announceButtonKings.png", "/GameComponents/announceButtonKUltimo.png",
+				"/GameComponents/announceButtonPagat.png", "/GameComponents/announceButtonTrula.png",
+				"/GameComponents/announceButtonValat.png" };
+		for (int i = 0; i < 5; i++) {
+			if (i < 3)
+				drawClickable(g2, 39 + i, pngName[index], contractWidth, 30 + i * 15, 40);
+			else
+				drawClickable(g2, 39 + i, pngName[index], contractWidth, 35 + (i - 3) * 20, 55);
+			index++;
+
+		}
+		drawClickable(g2, 44, "/GameComponents/closeAnnouncements.png", closeAnnWidth, 48, 25);
+
+		gl.announcePicker();
+
+		if (il.isFlag(44)) {
+			annClosed = true;
+			repaint();
+		}
+	}
+
+	private void drawMainGame(Graphics g2) {
+		placeCard(g2);
+		gl.bots!!!
+	}
+
+	private void placeCard(Graphics g2) {
+		for (int i = 0;i<12;i++) {
+			if (il.isFlag(1+i)) {
+				drawCard(g2, i+1, gl.getPlayerCards().get(i), 47, 50);
+				gl.getPlayerCards().remove(i);
+				il.resetFlag(1+i);
+				drawPlayerHand((Graphics2D) g2);
+			}
+		}
+	}
+
 	private void drawPlayerHand(Graphics2D g2) {
-		for (int i = 0; i < 12; i++) {
-			drawCard(g2, 1 + i, cards.get(i), 14 + 6 * i, 70);
+		for (int i = 0; i < gl.getPlayerCards().size(); i++) {
+			drawCard(g2, 1 + i, gl.getPlayerCards().get(i), 14 + 6 * i, 70);
 
 		}
 	}
 
 	private void drawBotHands(Graphics2D g2) {
 		// Left Player
-		for (int i = 0; i < 12; i++) {
+		for (int i = 0; i < gl.getlPlayerCards().size(); i++) {
 			drawClickableReverse(g2, BACKGROUNDINDEXL, "/GameComponents/cardBackgroundL.png", LRplayerHeight, 2,
 					28 + 3 * i);
 		}
 		// Right Player
-		for (int i = 0; i < 12; i++) {
+		for (int i = 0; i < gl.getrPlayerCards().size(); i++) {
 			drawClickableReverse(g2, BACKGROUNDINDEXR, "/GameComponents/cardBackgroundL.png", LRplayerHeight, 88,
 					28 + 3 * i);
 		}
 
 		// Top Player
-		for (int i = 0; i < 12; i++) {
+		for (int i = 0; i < gl.gettPlayerCards().size(); i++) {
 			drawClickable(g2, BACKGROUNDINDEXT, "/GameComponents/cardBackgroundP.png", topPlayerWidth, 32 + 3 * i, 3);
 		}
 	}
@@ -273,18 +332,27 @@ public class Board extends JPanel {
 			il.clearBounds(16 + i);
 		System.out.println("Contract Flags Removed");
 	}
+	
+	private void removePlayerBounds() {
+		for (int i = 0; i < 12; i++)
+			il.clearBounds(1 + i);
+		System.out.println("Player Flags Removed");
+	}
 
 	public void mouseReleased(MouseEvent e) {
 		System.out.println("Point " + e.getPoint());
 		for (int i = 0; i <= il.getMaxIndex(); i++) {
+
 			int cX = e.getX(), cY = e.getY();
-			if (il.getX(i) < cX && cX < (il.getX(i) + il.getWidth(i)))
-				if (il.getY(i) < cY && cY < (il.getY(i) + il.getHeight(i))) {
-					il.triggerFlag(i);
-					System.out.println(
-							il.isFlag(i) + " at Flag " + i + " at " + il.getX(i) + " - " + (il.getX(i) + il.getWidth(i))
-									+ " and " + il.getY(i) + " - " + (il.getY(i) + il.getHeight(i)));
-				}
+			if (il.skip(i) != true)
+				if (il.getX(i) < cX && cX < (il.getX(i) + il.getWidth(i)))
+					if (il.getY(i) < cY && cY < (il.getY(i) + il.getHeight(i))) {
+						il.triggerFlag(i);
+						System.out.println(il.isFlag(i) + " at Flag " + i + " at " + il.getX(i) + " - "
+								+ (il.getX(i) + il.getWidth(i)) + " and " + il.getY(i) + " - "
+								+ (il.getY(i) + il.getHeight(i)));
+
+					}
 		}
 		repaint();
 	}

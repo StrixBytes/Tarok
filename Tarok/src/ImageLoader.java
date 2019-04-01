@@ -26,6 +26,13 @@ public class ImageLoader {
 		getImageDim(imgIndex);
 
 	}
+	
+	public boolean skip(int i) {
+		boolean temp = false;
+		if (x.get(i)==null)
+			temp=true;
+		return temp;
+	}
 
 	private void getImageDim(int index) {
 		if (index == -1)
