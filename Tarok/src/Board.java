@@ -4,19 +4,17 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Transparency;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.swing.JPanel;
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
+import javax.swing.Timer;
 
-public class Board extends JPanel {
+import javax.swing.JPanel;
+
+public class Board extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	private boolean inmenu;
 	private boolean ingame;
@@ -28,10 +26,13 @@ public class Board extends JPanel {
 	private List<Integer> cards = new ArrayList<>();;
 	private CardTranslator ct;
 	private GameLogic gl;
+	private Timer timer;
 	ImageLoader il = new ImageLoader();
 	private int cardWidth, LRplayerHeight, topPlayerWidth, startGameWidth, contractWidth, closeAnnWidth;
 	private int talonSwap = 0;
-	int excludeList[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	private int selectedCard = -1, rSelectedCard = -1, tSelectedCard = -1, lSelectedCard = -1;
+	private int excludeList[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	private int timerCounter = 0;
 	private final int BACKGROUNDINDEXL = 13;
 	private final int BACKGROUNDINDEXR = 14;
 	private final int BACKGROUNDINDEXT = 15;
@@ -96,12 +97,14 @@ public class Board extends JPanel {
 	}
 
 	private void drawCard(Graphics g2, int index, int cardIndex, int xInPercent, int yInPercent) {
-		il.setImgIndex(index);
-		il.loadImage(ct.cardToImage(cardIndex));
-		il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
-		il.setCoordinates(-1, ResolutionScaler.percentToWidth(xInPercent),
-				ResolutionScaler.percentToHeight(yInPercent));
-		g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+		if (cardIndex != -1) {
+			il.setImgIndex(index);
+			il.loadImage(ct.cardToImage(cardIndex));
+			il.setDimensions(-1, cardWidth, il.getNewImageHeight(cardWidth));
+			il.setCoordinates(-1, ResolutionScaler.percentToWidth(xInPercent),
+					ResolutionScaler.percentToHeight(yInPercent));
+			g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
+		}
 
 	}
 
@@ -270,19 +273,36 @@ public class Board extends JPanel {
 	}
 
 	private void drawMainGame(Graphics g2) {
-		placeCard(g2);
-		gl.bots!!!
+		timer = new Timer(100, this);
+//		if (gl.roundStart() == "BOTTOM") {
+			if (timerCounter == 0) {
+				selectCard();
+				
+			}
+
+//		}
+		drawCard(g2, 45, selectedCard, 47, 46);
+		drawCard(g2, 46, rSelectedCard, 55, 34);
+		drawCard(g2, 47, tSelectedCard, 47, 21);
+		drawCard(g2, 48, lSelectedCard, 39, 34);
+
 	}
 
-	private void placeCard(Graphics g2) {
-		for (int i = 0;i<12;i++) {
-			if (il.isFlag(1+i)) {
-				drawCard(g2, i+1, gl.getPlayerCards().get(i), 47, 50);
+	private int selectCard() {
+		for (int i = 0; i < gl.getPlayerCards().size(); i++) {
+			if (il.isFlag(1 + i)) {
+				selectedCard = gl.getPlayerCards().get(i);
+				il.resetFlag(1 + i);
+				gl.setPlayedCard(gl.getPlayerCards().get(i));
 				gl.getPlayerCards().remove(i);
-				il.resetFlag(1+i);
-				drawPlayerHand((Graphics2D) g2);
+				rSelectedCard = -1;
+				tSelectedCard = -1;
+				lSelectedCard = -1;
+				timer.start();
 			}
 		}
+
+		return selectedCard;
 	}
 
 	private void drawPlayerHand(Graphics2D g2) {
@@ -332,7 +352,7 @@ public class Board extends JPanel {
 			il.clearBounds(16 + i);
 		System.out.println("Contract Flags Removed");
 	}
-	
+
 	private void removePlayerBounds() {
 		for (int i = 0; i < 12; i++)
 			il.clearBounds(1 + i);
@@ -355,6 +375,28 @@ public class Board extends JPanel {
 					}
 		}
 		repaint();
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		timerCounter++;
+		if (timerCounter == 1)
+			rSelectedCard = gl.rightBot();
+		else if (timerCounter == 2)
+			tSelectedCard = gl.topBot();
+		else if (timerCounter == 3)
+			lSelectedCard = gl.leftBot();
+		else if (timerCounter == 4) {
+			gl.roundWinner();
+		} else if (timerCounter == 5) {
+			timerCounter = 0;
+			((Timer) e.getSource()).stop();
+
+		}
+
+		repaint();
+		System.out.println(timerCounter);
+
 	}
 
 }
