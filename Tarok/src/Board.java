@@ -23,6 +23,7 @@ public class Board extends JPanel implements ActionListener {
 	private boolean talonSwitched;
 	private boolean kingPicked;
 	private boolean annClosed;
+	private boolean scoreGame;
 	private List<Integer> cards = new ArrayList<>();;
 	private CardTranslator ct;
 	private GameLogic gl;
@@ -108,12 +109,6 @@ public class Board extends JPanel implements ActionListener {
 
 	}
 
-	private static GraphicsConfiguration getDefaultConfiguration() {
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice gd = ge.getDefaultScreenDevice();
-		return gd.getDefaultConfiguration();
-	}
-
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
@@ -138,17 +133,18 @@ public class Board extends JPanel implements ActionListener {
 		setBackground(Color.GRAY);
 		if (gl.contractNotPicked())
 			showContracts(g2);
-		if (gl.showTalon() && !talonSwitched) {
+
+		if (gl.pickKing()&& !kingPicked&&!gl.openTalon()) {
 			if (!contractsRemoved)
 				removeContractBounds();
-			showTalon(g2);
-		}
-		if (gl.pickKing() && talonSwitched && !kingPicked) {
 			showKings(g2);
 		}
-
-		if (talonSwitched && gl.announce() && !annClosed) {
+		if (gl.showTalon() &&gl.openTalon()&& !talonSwitched) {
+			showTalon(g2);
+		}
+		if (talonSwitched  && !annClosed) {
 			showAnnouncements(g2);
+			gl.orderPlayerCards();
 		}
 		if (annClosed) {
 			drawMainGame(g2);
@@ -210,7 +206,7 @@ public class Board extends JPanel implements ActionListener {
 			talonSwitcher();
 		} else if (talonSwap == gl.talonSplitter()) {
 			talonSwitched = true;
-			gl.orderPlayerCards();
+
 			repaint();
 		}
 	}
@@ -273,14 +269,39 @@ public class Board extends JPanel implements ActionListener {
 	}
 
 	private void drawMainGame(Graphics g2) {
-		timer = new Timer(100, this);
-//		if (gl.roundStart() == "BOTTOM") {
-			if (timerCounter == 0) {
+		timer = new Timer(400, this);
+		if (gl.roundStart() == "BOTTOM") {
+			if (timerCounter == 0)
 				selectCard();
-				
-			}
+			gl.setPlayedCard(selectedCard);
+		}
+		if (gl.roundStart() == "LEFT") {
+			if (timerCounter == 0)
+				timer.start();
+			else if (timerCounter == 4)
+				selectCard();
+		}
+		if (gl.roundStart() == "TOP") {
+			if (timerCounter == 0)
+				timer.start();
+			else if (timerCounter == 3)
+				selectCard();
+		}
+		if (gl.roundStart() == "RIGHT") {
+			if (timerCounter == 0)
+				timer.start();
+			else if (timerCounter == 2)
+				selectCard();
+		}
+		if (scoreGame) {
+			gl.normalScoring("BOTTOM");
+			gl.normalScoring("LEFT");
+			gl.normalScoring("TOP");
+			gl.normalScoring("RIGHT");
+			scoreGame=false;
+		}
+			
 
-//		}
 		drawCard(g2, 45, selectedCard, 47, 46);
 		drawCard(g2, 46, rSelectedCard, 55, 34);
 		drawCard(g2, 47, tSelectedCard, 47, 21);
@@ -293,11 +314,8 @@ public class Board extends JPanel implements ActionListener {
 			if (il.isFlag(1 + i)) {
 				selectedCard = gl.getPlayerCards().get(i);
 				il.resetFlag(1 + i);
-				gl.setPlayedCard(gl.getPlayerCards().get(i));
+				gl.setTempBottom(selectedCard);
 				gl.getPlayerCards().remove(i);
-				rSelectedCard = -1;
-				tSelectedCard = -1;
-				lSelectedCard = -1;
 				timer.start();
 			}
 		}
@@ -379,23 +397,74 @@ public class Board extends JPanel implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		timerCounter++;
-		if (timerCounter == 1)
-			rSelectedCard = gl.rightBot();
-		else if (timerCounter == 2)
-			tSelectedCard = gl.topBot();
-		else if (timerCounter == 3)
-			lSelectedCard = gl.leftBot();
-		else if (timerCounter == 4) {
-			gl.roundWinner();
-		} else if (timerCounter == 5) {
+		if (gl.getlPlayerCards().isEmpty()&&gl.gettPlayerCards().isEmpty()&&gl.getrPlayerCards().isEmpty()&&gl.getPlayerCards().isEmpty()) {
+			scoreGame=true;
+			((Timer) e.getSource()).stop();
+		}
+		else if (timerCounter == 6) {
 			timerCounter = 0;
 			((Timer) e.getSource()).stop();
+			System.out.println(ct.cardToImage(selectedCard) + " bot" + ct.cardToImage(lSelectedCard) + " left"
+					+ ct.cardToImage(tSelectedCard) + " top" + ct.cardToImage(rSelectedCard) + " right");
+			System.out.println(ct.cardToImage(gl.getPlayedCard()) + " played Card");
+			gl.roundWinner();
+			gl.setPlayedCard(-1);
+			rSelectedCard = -1;
+			tSelectedCard = -1;
+			lSelectedCard = -1;
+			selectedCard = -1;
+			
+			System.out.println(ct.cardToImage(gl.getPlayedCard()) + " played Card");
+			System.out.println(gl.roundStart());
+		} else if (((Timer) e.getSource()).isRunning()) {
+			timerCounter++;
 
 		}
+		if (gl.roundStart() == "BOTTOM") {
+			if (timerCounter == 1)
+				lSelectedCard = gl.cardComparatorBot(gl.getlPlayerCards());
+			else if (timerCounter == 2)
+				tSelectedCard = gl.cardComparatorBot(gl.gettPlayerCards());
+			else if (timerCounter == 3)
+				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
+			
+
+		} else if (gl.roundStart() == "LEFT") {
+			if (timerCounter == 1)
+				lSelectedCard = gl.cardPlayBot(gl.getlPlayerCards());
+			else if (timerCounter == 2)
+				tSelectedCard = gl.cardComparatorBot(gl.gettPlayerCards());
+			else if (timerCounter == 3)
+				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
+			else if (timerCounter == 4)
+				((Timer) e.getSource()).stop();
+			
+
+		} else if (gl.roundStart() == "TOP") {
+			if (timerCounter == 1)
+				tSelectedCard = gl.cardPlayBot(gl.gettPlayerCards());
+			else if (timerCounter == 2)
+				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
+			else if (timerCounter == 3)
+				((Timer) e.getSource()).stop();
+			else if (timerCounter == 4)
+				lSelectedCard = gl.cardComparatorBot(gl.getlPlayerCards());
+			
+		} else if (gl.roundStart() == "RIGHT") {
+			if (timerCounter == 1)
+				rSelectedCard = gl.cardPlayBot(gl.getrPlayerCards());
+			else if (timerCounter == 2)
+				((Timer) e.getSource()).stop();
+			else if (timerCounter == 3)
+				lSelectedCard = gl.cardComparatorBot(gl.getlPlayerCards());
+			else if (timerCounter == 4)
+				tSelectedCard = gl.cardComparatorBot(gl.gettPlayerCards());
+			
+		}
+		
 
 		repaint();
-		System.out.println(timerCounter);
+//		System.out.println(timerCounter);
 
 	}
 
