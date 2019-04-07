@@ -324,10 +324,10 @@ public class Board extends JPanel implements ActionListener {
 		FontMetrics fm = getFontMetrics(scoreFont);
 		g2.setColor(Color.WHITE);
 		g2.setFont(scoreFont);
-		String bScore ="Vaše Točke: "+bottomScore;
-		String lScore = "Levi Točke: " + leftScore;
-		String tScore = "Zgornji Točke: " + topScore;
-		String rScore = "Desni Točke: " + rightScore;
+		String bScore ="Vase Tocke: "+bottomScore;
+		String lScore = "Levi Tocke: " + leftScore;
+		String tScore = "Zgornji Tocke: " + topScore;
+		String rScore = "Desni Tocke: " + rightScore;
 		g2.drawString(bScore, ResolutionScaler.percentToWidth(90), ResolutionScaler.percentToHeight(96));
 		g2.drawString(lScore, ResolutionScaler.percentToWidth(5)-fm.stringWidth(lScore)/2, ResolutionScaler.percentToHeight(2));
 		g2.drawString(tScore, ResolutionScaler.percentToWidth(50)-fm.stringWidth(tScore)/2, ResolutionScaler.percentToHeight(2));
