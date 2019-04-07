@@ -1,1 +1,10 @@
-/Board$1.class
+/Cards/
+/GameComponents/
+/MenuComponents/
+/Board.class
+/CardTranslator.class
+/ClickAdapter.class
+/GameLogic.class
+/ImageLoader.class
+/ResolutionScaler.class
+/TarokExec.class

@@ -1,7 +1,10 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class GameLogic {
 	private static final long serialVersionUID = 1L;
@@ -10,13 +13,14 @@ public class GameLogic {
 	private CardTranslator ct;
 	private String gamePicked = null;
 	private int kingPicked = -1;
-
-	private List<Integer> playerCards, lPlayerCards, tPlayerCards, rPlayerCards, talonCards;
+	private List<Integer> playerCards, lPlayerCards, tPlayerCards, rPlayerCards, talonCards, keptCards;
+	private List<Integer> playerScoreCards, leftScoreCards, topScoreCards, rightScoreCards;
 	private HashMap<String, Boolean> announcements;
 	private String partner;
 	private int playedCard = -1;
 	private int gameRoundCounter = 0;
-	private int tempRight, tempTop, tempLeft;
+	private int tempRight, tempTop, tempLeft, tempBottom;
+	private int bottomScore =0, leftScore, topScore, rightScore;
 
 	public GameLogic(ImageLoader il, List<Integer> cards) {
 		this.il = il;
@@ -32,6 +36,11 @@ public class GameLogic {
 		tPlayerCards = new ArrayList<Integer>(cards.subList(24, 36));
 		rPlayerCards = new ArrayList<Integer>(cards.subList(36, 48));
 		talonCards = new ArrayList<Integer>(cards.subList(48, 54));
+		playerScoreCards = new ArrayList<Integer>();
+		leftScoreCards = new ArrayList<Integer>();
+		topScoreCards = new ArrayList<Integer>();
+		rightScoreCards = new ArrayList<Integer>();
+		keptCards = new ArrayList<Integer>();
 		// listPrint
 		System.out.println();
 		for (int i : playerCards)
@@ -258,7 +267,7 @@ public class GameLogic {
 		return partner;
 	}
 
-	public boolean announce() {
+	public boolean openTalon() {
 		boolean temp = false;
 		if (kingPicked != -1 || isSolo())
 			temp = true;
@@ -288,6 +297,10 @@ public class GameLogic {
 		this.playedCard = playedCard;
 	}
 
+	public void setTempBottom(int tempBottom) {
+		this.tempBottom = tempBottom;
+	}
+
 	public String roundStart() {
 		String temp = "";
 		if (gameRoundCounter == 0) {
@@ -303,168 +316,284 @@ public class GameLogic {
 
 	}
 
-	public int rightBot() {
-		tempRight = -1;
-		int playedCardStr = ct.cardStrength(playedCard);
-		String playedCardSuit = ct.cardSuit(playedCard);
-		boolean eligible = false;
-		for (int i = 0; i < rPlayerCards.size(); i++) {
-			String rightSuit = ct.cardSuit(rPlayerCards.get(i));
-			int rightStr = ct.cardStrength(rPlayerCards.get(i));
-			if (playedCardSuit == rightSuit && playedCardStr < rightStr && !eligible) {
-				tempRight = rPlayerCards.get(i);
-				eligible = true;
-				rPlayerCards.remove(i);
-				System.out.println("Run t1");
-			}
+	public int cardPlayBot(List<Integer> bot) {
+		int temp = -1;
+		if (!bot.isEmpty()) {
+			temp = bot.get(0);
+			bot.remove(0);
 		}
-
-		for (int i = 0; i < rPlayerCards.size(); i++) {
-			String rightSuit = ct.cardSuit(rPlayerCards.get(i));
-			if (playedCardSuit == rightSuit && !eligible) {
-				tempRight = rPlayerCards.get(i);
-				eligible = true;
-				rPlayerCards.remove(i);
-				System.out.println("Run t2");
-			}
+		playedCard = temp;
+		if (bot == rPlayerCards) {
+			tempRight = temp;
+		} else if (bot == tPlayerCards) {
+			tempTop = temp;
+		} else if (bot == lPlayerCards) {
+			tempLeft = temp;
 		}
-
-		for (int i = 0; i < rPlayerCards.size(); i++) {
-			String rightSuit = ct.cardSuit(rPlayerCards.get(i));
-			if (rightSuit == "SUIT.TAROK" && !eligible) {
-				tempRight = rPlayerCards.get(i);
-				eligible = true;
-				rPlayerCards.remove(i);
-				System.out.println("Run t3");
-			}
-		}
-		if (!rPlayerCards.isEmpty() && !eligible) {
-			tempRight = rPlayerCards.get(0);
-			eligible = true;
-			rPlayerCards.remove(0);
-			System.out.println("Run t4");
-		}
-		return tempRight;
+		return temp;
 	}
 
-	public int topBot() {
-		tempTop = -1;
+	public int cardComparatorBot(List<Integer> bot) {
+		int temp = -1;
 		int playedCardStr = ct.cardStrength(playedCard);
 		String playedCardSuit = ct.cardSuit(playedCard);
 		boolean eligible = false;
-		for (int i = 0; i < tPlayerCards.size(); i++) {
-			String topSuit = ct.cardSuit(tPlayerCards.get(i));
-			int topStr = ct.cardStrength(tPlayerCards.get(i));
-			if (playedCardSuit == topSuit && playedCardStr < topStr && !eligible) {
-				tempTop = tPlayerCards.get(i);
+		for (int i = 0; i < bot.size(); i++) {
+			String botSuit = ct.cardSuit(bot.get(i));
+			int botStr = ct.cardStrength(bot.get(i));
+			if (playedCardSuit == botSuit && playedCardStr < botStr && !eligible) {
+				temp = bot.get(i);
 				eligible = true;
-				tPlayerCards.remove(i);
-				System.out.println("Run t1");
+				bot.remove(i);
 			}
 		}
 
-		for (int i = 0; i < tPlayerCards.size(); i++) {
-			String topSuit = ct.cardSuit(tPlayerCards.get(i));
-			if (playedCardSuit == topSuit && !eligible) {
-				tempTop = tPlayerCards.get(i);
+		for (int i = 0; i < bot.size(); i++) {
+			String botSuit = ct.cardSuit(bot.get(i));
+			if (playedCardSuit == botSuit && !eligible) {
+				temp = bot.get(i);
 				eligible = true;
-				tPlayerCards.remove(i);
-				System.out.println("Run t2");
+				bot.remove(i);
 			}
 		}
 
-		for (int i = 0; i < tPlayerCards.size(); i++) {
-			String topSuit = ct.cardSuit(tPlayerCards.get(i));
-			if (topSuit == "SUIT.TAROK" && !eligible) {
-				tempTop = tPlayerCards.get(i);
+		for (int i = 0; i < bot.size(); i++) {
+			String botSuit = ct.cardSuit(bot.get(i));
+			if (botSuit == "SUIT.TAROK" && !eligible) {
+				temp = bot.get(i);
 				eligible = true;
-				tPlayerCards.remove(i);
-				System.out.println("Run t3");
+				bot.remove(i);
 			}
 		}
-		if (!tPlayerCards.isEmpty() && !eligible) {
-			tempTop = tPlayerCards.get(0);
+		if (!bot.isEmpty() && !eligible) {
+			temp = bot.get(0);
 			eligible = true;
-			tPlayerCards.remove(0);
-			System.out.println("Run t4");
-		}
-		return tempTop;
-	}
-
-	public int leftBot() {
-		tempLeft = -1;
-		int playedCardStr = ct.cardStrength(playedCard);
-		String playedCardSuit = ct.cardSuit(playedCard);
-		boolean eligible = false;
-		for (int i = 0; i < lPlayerCards.size(); i++) {
-			String leftSuit = ct.cardSuit(lPlayerCards.get(i));
-			int leftStr = ct.cardStrength(lPlayerCards.get(i));
-			if (playedCardSuit == leftSuit && playedCardStr < leftStr && !eligible) {
-				tempLeft = lPlayerCards.get(i);
-				eligible = true;
-				lPlayerCards.remove(i);
-				System.out.println("Run t1");
-			}
+			bot.remove(0);
 		}
 
-		for (int i = 0; i < lPlayerCards.size(); i++) {
-			String leftSuit = ct.cardSuit(lPlayerCards.get(i));
-			if (playedCardSuit == leftSuit && !eligible) {
-				tempLeft = lPlayerCards.get(i);
-				eligible = true;
-				lPlayerCards.remove(i);
-				System.out.println("Run t2");
-			}
+		if (bot == rPlayerCards) {
+			tempRight = temp;
+		} else if (bot == tPlayerCards) {
+			tempTop = temp;
+		} else if (bot == lPlayerCards) {
+			tempLeft = temp;
 		}
-
-		for (int i = 0; i < lPlayerCards.size(); i++) {
-			String leftSuit = ct.cardSuit(lPlayerCards.get(i));
-			if (leftSuit == "SUIT.TAROK" && !eligible) {
-				tempLeft = lPlayerCards.get(i);
-				eligible = true;
-				lPlayerCards.remove(i);
-				System.out.println("Run t3");
-			}
-		}
-		if (!lPlayerCards.isEmpty() && !eligible) {
-			tempLeft = lPlayerCards.get(0);
-			eligible = true;
-			lPlayerCards.remove(0);
-			System.out.println("Run t4");
-		}
-		return tempLeft;
-
+		return temp;
 	}
 
 	public void roundWinner() {
 		int temp = playedCard;
-		int[] cardTable = { tempRight, tempTop, tempLeft };
+
+		int[] comparables = { tempBottom, tempLeft, tempRight, tempTop };
+		List<Integer> score = Arrays.asList(tempBottom, tempLeft, tempRight, tempTop);
 		if (ct.cardSuit(playedCard) == "SUIT.TAROK") {
-			for (int i = 0; i < 3; i++)
-				if (ct.cardSuit(cardTable[i]) == "SUIT.TAROK" && ct.cardStrength(cardTable[i]) > ct.cardStrength(temp))
-					temp = cardTable[i];
-		} else if(ct.cardSuit(playedCard) != "SUIT.TAROK"&&(ct.cardSuit(tempRight)=="SUIT.TAROK"||ct.cardSuit(tempTop)=="SUIT.TAROK"||ct.cardSuit(tempLeft)=="SUIT.TAROK")){
-			for (int i = 0; i < 3; i++)
-				if (ct.cardSuit(cardTable[i]) == "SUIT.TAROK" && ct.cardStrength(cardTable[i]) > ct.cardStrength(temp))
-					temp = cardTable[i];
-		}else if (ct.cardSuit(playedCard) != "SUIT.TAROK") {
-			for (int i = 0; i < 3; i++)
-				if (ct.cardSuit(playedCard) == ct.cardSuit(cardTable[i])
-						&& ct.cardStrength(cardTable[i]) > ct.cardStrength(temp))
-					temp = cardTable[i];
+			for (int i : comparables)
+				if (ct.cardSuit(i) == "SUIT.TAROK" && ct.cardStrength(i) > ct.cardStrength(temp))
+					temp = i;
+		} else if (ct.cardSuit(playedCard) != "SUIT.TAROK"
+				&& (ct.cardSuit(tempRight) == "SUIT.TAROK" || ct.cardSuit(tempTop) == "SUIT.TAROK"
+						|| ct.cardSuit(tempLeft) == "SUIT.TAROK" || ct.cardSuit(tempBottom) == "SUIT.TAROK")) {
+			for (int i : comparables) {
+				if (ct.cardSuit(temp) != "SUIT.TAROK" && ct.cardSuit(i) == "SUIT.TAROK")
+					temp = i;
+				else if (ct.cardSuit(temp) == "SUIT.TAROK" && ct.cardSuit(i) == "SUIT.TAROK"
+						&& ct.cardStrength(i) > ct.cardStrength(temp))
+					temp = i;
+			}
+		} else {
+			for (int i : comparables)
+				if (ct.cardSuit(playedCard) == ct.cardSuit(i) && ct.cardStrength(i) > ct.cardStrength(temp))
+					temp = i;
+
+		}
+		if (temp == tempRight) {
+			gameRoundCounter = 1;
+			rightScoreCards.addAll(score);
+		} else if (temp == tempTop) {
+			gameRoundCounter = 2;
+			topScoreCards.addAll(score);
+		} else if (temp == tempLeft) {
+			gameRoundCounter = 3;
+			leftScoreCards.addAll(score);
+		} else if (temp == tempBottom) {
+			gameRoundCounter = 0;
+			playerScoreCards.addAll(score);
+		} else
+			System.out.println("Error");
+
+	}
+
+	public void addKeptCards(int cardIndex) {
+		keptCards.add(cardIndex);
+	}
+
+
+
+	public int individualCountScoring(String player) {
+		List<Integer> temp = null;
+		int score = 0;
+		if (player == "BOTTOM") {
+			temp = playerScoreCards;
+		} else if (player == "LEFT") {
+			temp = leftScoreCards;
+		} else if (player == "TOP") {
+			temp = topScoreCards;
+		} else if (player == "RIGHT") {
+			temp = rightScoreCards;
+		} else if (player == "KEPT") {
+			temp = keptCards;
+		} 
+		while (!temp.isEmpty()) {
+			if (temp.size() >= 3) {
+				int fullCount = 0;
+				int tempScore = 0;
+
+				for (int i = 0; i < 3; i++) {
+					int tempCard = temp.get(0);
+					temp.remove(0);
+					if ((ct.cardSuit(tempCard) == "SUIT.TAROK" && (ct.cardStrength(tempCard) != 22
+							|| ct.cardStrength(tempCard) != 21 || ct.cardStrength(tempCard) != 1))
+							|| (ct.cardSuit(tempCard) != "SUIT.TAROK" && ct.cardStrength(tempCard) < 5)) {
+						tempScore++;
+					} else if ((ct.cardSuit(tempCard) == "SUIT.TAROK" && (ct.cardStrength(tempCard) == 22
+							|| ct.cardStrength(tempCard) == 21 || ct.cardStrength(tempCard) == 1))) {
+						tempScore += 5;
+						fullCount++;
+					} else {
+						tempScore += ct.cardStrength(tempCard) - 3;
+						fullCount++;
+					}
+					if (fullCount > 1)
+						tempScore -= fullCount - 1;
+				}
+				score += tempScore;
+			} else if (temp.size() < 3) {
+				int fullCount = 0;
+				int tempScore = 0;
+
+				for (int i = 0; i < temp.size(); i++) {
+					int tempCard = temp.get(0);
+					temp.remove(0);
+					if ((ct.cardSuit(tempCard) == "SUIT.TAROK" && (ct.cardStrength(tempCard) != 22
+							|| ct.cardStrength(tempCard) != 21 || ct.cardStrength(tempCard) != 1))
+							|| (ct.cardSuit(tempCard) != "SUIT.TAROK" && ct.cardStrength(tempCard) < 5)) {
+						tempScore++;
+					} else if ((ct.cardSuit(tempCard) == "SUIT.TAROK" && (ct.cardStrength(tempCard) == 22
+							|| ct.cardStrength(tempCard) == 21 || ct.cardStrength(tempCard) == 1))) {
+						tempScore += 5;
+						fullCount++;
+					} else {
+						tempScore += ct.cardStrength(tempCard) - 3;
+						fullCount++;
+					}
+					if (fullCount > 1)
+						tempScore -= fullCount - 1;
+				}
+				score += tempScore;
+			}
+		}
+		System.out.println(score + " " + player);
+		return score;
+	}
+
+	public void normalScoring() {
+		int diff = 0;
+		bottomScore = 0;
+		leftScore = 0;
+		topScore = 0;
+		rightScore = 0;
+		if (gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One") {
+
+			int tempPair = 0;
+			if (partner == "SELF") {
+				tempPair = individualCountScoring("BOTTOM") + individualCountScoring("KEPT");
+			} else if (partner == "LEFT") {
+				tempPair = individualCountScoring("BOTTOM") + individualCountScoring("KEPT")
+						+ individualCountScoring("LEFT");
+			} else if (partner == "TOP") {
+				tempPair = individualCountScoring("BOTTOM") + individualCountScoring("KEPT")
+						+ individualCountScoring("TOP");
+			} else if (partner == "RIGHT") {
+				tempPair = individualCountScoring("BOTTOM") + individualCountScoring("KEPT")
+						+ individualCountScoring("RIGHT");
+			}
+			diff = tempPair -35;
+			if (diff >=0) {
+				if (gamePicked=="Three")
+					diff+=10;
+				else if (gamePicked=="Two")
+					diff+=20;
+				if (gamePicked=="One")
+					diff+=30;
+			}else {
+				if (gamePicked=="Three")
+					diff-=10;
+				else if (gamePicked=="Two")
+					diff-=20;
+				if (gamePicked=="One")
+					diff-=30;
+			}
+			
+			if (partner == "SELF") {
+				bottomScore = diff;
+			} else if (partner == "LEFT") {
+				bottomScore = diff;
+				leftScore = diff;
+			} else if (partner == "TOP") {
+				bottomScore = diff;
+				topScore = diff;
+			} else if (partner == "RIGHT") {
+				bottomScore = diff;
+				rightScore = diff;
+			}
+		}
+		else if (isSolo()) {
+			diff = individualCountScoring("BOTTOM") + individualCountScoring("KEPT")-35;
+			if (diff >=0) {
+				if (gamePicked=="SoloThree")
+					diff+=10;
+				else if (gamePicked=="SoloTwo")
+					diff+=20;
+				if (gamePicked=="SoloOne")
+					diff+=30;
+			}else {
+				if (gamePicked=="SoloThree")
+					diff-=10;
+				else if (gamePicked=="SoloTwo")
+					diff-=20;
+				if (gamePicked=="SoloOne")
+					diff-=30;
+			}
+			bottomScore = diff;
 		}
 
-		
-		
-		
-		if (temp == tempRight)
-			gameRoundCounter = 1;
-		else if (temp == tempTop)
-			gameRoundCounter = 2;
-		else if (temp == tempLeft)
-			gameRoundCounter = 3;
-		else if (temp == playedCard)
-			gameRoundCounter = 0;
-		System.out.println(roundStart());
 	}
+
+	public int getBottomScore() {
+		return bottomScore;
+	}
+
+	public int getLeftScore() {
+		return leftScore;
+	}
+
+	public int getTopScore() {
+		return topScore;
+	}
+
+	public int getRightScore() {
+		return rightScore;
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }
