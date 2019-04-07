@@ -2,7 +2,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class GameLogic {
 	private static final long serialVersionUID = 1L;
@@ -11,14 +13,14 @@ public class GameLogic {
 	private CardTranslator ct;
 	private String gamePicked = null;
 	private int kingPicked = -1;
-
-	private List<Integer> playerCards, lPlayerCards, tPlayerCards, rPlayerCards, talonCards;
+	private List<Integer> playerCards, lPlayerCards, tPlayerCards, rPlayerCards, talonCards, keptCards;
 	private List<Integer> playerScoreCards, leftScoreCards, topScoreCards, rightScoreCards;
 	private HashMap<String, Boolean> announcements;
 	private String partner;
 	private int playedCard = -1;
 	private int gameRoundCounter = 0;
 	private int tempRight, tempTop, tempLeft, tempBottom;
+	private int bottomScore =0, leftScore, topScore, rightScore;
 
 	public GameLogic(ImageLoader il, List<Integer> cards) {
 		this.il = il;
@@ -38,6 +40,7 @@ public class GameLogic {
 		leftScoreCards = new ArrayList<Integer>();
 		topScoreCards = new ArrayList<Integer>();
 		rightScoreCards = new ArrayList<Integer>();
+		keptCards = new ArrayList<Integer>();
 		// listPrint
 		System.out.println();
 		for (int i : playerCards)
@@ -420,7 +423,13 @@ public class GameLogic {
 
 	}
 
-	public int normalScoring(String player) {
+	public void addKeptCards(int cardIndex) {
+		keptCards.add(cardIndex);
+	}
+
+
+
+	public int individualCountScoring(String player) {
 		List<Integer> temp = null;
 		int score = 0;
 		if (player == "BOTTOM") {
@@ -431,7 +440,9 @@ public class GameLogic {
 			temp = topScoreCards;
 		} else if (player == "RIGHT") {
 			temp = rightScoreCards;
-		}
+		} else if (player == "KEPT") {
+			temp = keptCards;
+		} 
 		while (!temp.isEmpty()) {
 			if (temp.size() >= 3) {
 				int fullCount = 0;
@@ -484,4 +495,105 @@ public class GameLogic {
 		System.out.println(score + " " + player);
 		return score;
 	}
+
+	public void normalScoring() {
+		int diff = 0;
+		bottomScore = 0;
+		leftScore = 0;
+		topScore = 0;
+		rightScore = 0;
+		if (gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One") {
+
+			int tempPair = 0;
+			if (partner == "SELF") {
+				tempPair = individualCountScoring("BOTTOM") + individualCountScoring("KEPT");
+			} else if (partner == "LEFT") {
+				tempPair = individualCountScoring("BOTTOM") + individualCountScoring("KEPT")
+						+ individualCountScoring("LEFT");
+			} else if (partner == "TOP") {
+				tempPair = individualCountScoring("BOTTOM") + individualCountScoring("KEPT")
+						+ individualCountScoring("TOP");
+			} else if (partner == "RIGHT") {
+				tempPair = individualCountScoring("BOTTOM") + individualCountScoring("KEPT")
+						+ individualCountScoring("RIGHT");
+			}
+			diff = tempPair -35;
+			if (diff >=0) {
+				if (gamePicked=="Three")
+					diff+=10;
+				else if (gamePicked=="Two")
+					diff+=20;
+				if (gamePicked=="One")
+					diff+=30;
+			}else {
+				if (gamePicked=="Three")
+					diff-=10;
+				else if (gamePicked=="Two")
+					diff-=20;
+				if (gamePicked=="One")
+					diff-=30;
+			}
+			
+			if (partner == "SELF") {
+				bottomScore = diff;
+			} else if (partner == "LEFT") {
+				bottomScore = diff;
+				leftScore = diff;
+			} else if (partner == "TOP") {
+				bottomScore = diff;
+				topScore = diff;
+			} else if (partner == "RIGHT") {
+				bottomScore = diff;
+				rightScore = diff;
+			}
+		}
+		else if (isSolo()) {
+			diff = individualCountScoring("BOTTOM") + individualCountScoring("KEPT")-35;
+			if (diff >=0) {
+				if (gamePicked=="SoloThree")
+					diff+=10;
+				else if (gamePicked=="SoloTwo")
+					diff+=20;
+				if (gamePicked=="SoloOne")
+					diff+=30;
+			}else {
+				if (gamePicked=="SoloThree")
+					diff-=10;
+				else if (gamePicked=="SoloTwo")
+					diff-=20;
+				if (gamePicked=="SoloOne")
+					diff-=30;
+			}
+			bottomScore = diff;
+		}
+
+	}
+
+	public int getBottomScore() {
+		return bottomScore;
+	}
+
+	public int getLeftScore() {
+		return leftScore;
+	}
+
+	public int getTopScore() {
+		return topScore;
+	}
+
+	public int getRightScore() {
+		return rightScore;
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }
