@@ -76,6 +76,7 @@ public class ImageLoader {
 	}
 
 	public void clearBounds(int index) {
+		
 		x.put(index, 0);
 		y.put(index, 0);
 		width.put(index, 0);

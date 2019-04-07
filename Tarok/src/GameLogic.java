@@ -2,14 +2,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
-<<<<<<< HEAD
 
-=======
-//drawBotHands(g2);
->>>>>>> branch 'master' of https://github.com/StrixBytes/Tarok.git
 public class GameLogic {
 	private static final long serialVersionUID = 1L;
 	private ImageLoader il;
@@ -19,12 +13,15 @@ public class GameLogic {
 	private int kingPicked = -1;
 	private List<Integer> playerCards, lPlayerCards, tPlayerCards, rPlayerCards, talonCards, keptCards;
 	private List<Integer> playerScoreCards, leftScoreCards, topScoreCards, rightScoreCards;
+	private List<Integer> lastRoundList;
 	private HashMap<String, Boolean> announcements;
-	private String partner;
+	private String partner = null;
 	private int playedCard = -1;
 	private int gameRoundCounter = 0;
+	private int globalDiff = 0;
 	private int tempRight, tempTop, tempLeft, tempBottom;
-	private int bottomScore =0, leftScore, topScore, rightScore;
+	private int bottomScore, leftScore, topScore, rightScore;
+	private boolean valat;
 
 	public GameLogic(ImageLoader il, List<Integer> cards) {
 		this.il = il;
@@ -32,6 +29,16 @@ public class GameLogic {
 		ct = new CardTranslator();
 		dealCards();
 		initAnnouncements();
+	}
+
+	public void reset() {
+		dealCards();
+		initAnnouncements();
+		gamePicked = null;
+		kingPicked = -1;
+		partner = null;
+		gameRoundCounter = 0;
+		globalDiff = 0;
 	}
 
 	private void dealCards() {
@@ -45,6 +52,7 @@ public class GameLogic {
 		topScoreCards = new ArrayList<Integer>();
 		rightScoreCards = new ArrayList<Integer>();
 		keptCards = new ArrayList<Integer>();
+		lastRoundList = new ArrayList<Integer>();
 		// listPrint
 		System.out.println();
 		for (int i : playerCards)
@@ -154,14 +162,18 @@ public class GameLogic {
 		return contract;
 	}
 
-	public boolean showTalon() {
-		boolean talonApplicable;
+	public String getGamePicked() {
+		return gamePicked;
+	}
+
+	public boolean normalGames() {
+		boolean isNormal;
 		if (gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One" || gamePicked == "SoloThree"
-				|| gamePicked == "SoloTwo" || gamePicked == "SoloOne")
-			talonApplicable = true;
+				|| gamePicked == "SoloTwo" || gamePicked == "SoloOne" || gamePicked == "SoloWithout")
+			isNormal = true;
 		else
-			talonApplicable = false;
-		return talonApplicable;
+			isNormal = false;
+		return isNormal;
 	}
 
 	public boolean pickKing() {
@@ -231,13 +243,13 @@ public class GameLogic {
 
 	public void kingPicker() {
 		if (il.isFlag(35))
-			setKingPicked(29);
+			kingPicked = 29;
 		if (il.isFlag(36))
-			setKingPicked(37);
+			kingPicked = 37;
 		if (il.isFlag(37))
-			setKingPicked(45);
+			kingPicked = 45;
 		if (il.isFlag(38))
-			setKingPicked(53);
+			kingPicked = 53;
 	}
 
 	public int getKingPicked() {
@@ -265,6 +277,10 @@ public class GameLogic {
 			if (tPlayerCards.get(i) == kingPicked)
 				partner = "TOP";
 		}
+		for (int i = 0; i < 6; i++) {
+			if (talonCards.get(i) == kingPicked)
+				partner = "SELF";
+		}
 	}
 
 	public String getPartner() {
@@ -273,7 +289,7 @@ public class GameLogic {
 
 	public boolean openTalon() {
 		boolean temp = false;
-		if (kingPicked != -1 || isSolo())
+		if ((gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One") && kingPicked != -1 || isSolo())
 			temp = true;
 		return temp;
 	}
@@ -324,6 +340,8 @@ public class GameLogic {
 		int temp = -1;
 		if (!bot.isEmpty()) {
 			temp = bot.get(0);
+			if (bot.size() == 1)
+				addLastRound(temp);
 			bot.remove(0);
 		}
 		playedCard = temp;
@@ -342,6 +360,8 @@ public class GameLogic {
 		int playedCardStr = ct.cardStrength(playedCard);
 		String playedCardSuit = ct.cardSuit(playedCard);
 		boolean eligible = false;
+		if (bot.size() == 1)
+			addLastRound(bot.get(0));
 		for (int i = 0; i < bot.size(); i++) {
 			String botSuit = ct.cardSuit(bot.get(i));
 			int botStr = ct.cardStrength(bot.get(i));
@@ -431,11 +451,143 @@ public class GameLogic {
 		keptCards.add(cardIndex);
 	}
 
+	public void globalBonuses() {
+		if (partner == "SELF" || isSolo() || gamePicked == "SoloWithout") {
+			if (playerScoreCards.contains(29) && playerScoreCards.contains(37) && playerScoreCards.contains(45)
+					&& playerScoreCards.contains(53) && announcements.get("Kings") == true)
+				globalDiff += 20;
+			else if (playerScoreCards.contains(29) && playerScoreCards.contains(37) && playerScoreCards.contains(45)
+					&& playerScoreCards.contains(53) && announcements.get("Kings") == false)
+				globalDiff += 10;
+			if (playerScoreCards.contains(0) && playerScoreCards.contains(20) && playerScoreCards.contains(21)
+					&& announcements.get("Trula") == true)
+				globalDiff += 20;
+			else if (playerScoreCards.contains(0) && playerScoreCards.contains(20) && playerScoreCards.contains(21)
+					&& announcements.get("Trula") == false)
+				globalDiff += 10;
+			if (leftScoreCards.isEmpty() && topScoreCards.isEmpty() && rightScoreCards.isEmpty()
+					&& announcements.get("Valat") == true) {
+				valat = true;
+				globalDiff = 500;
+			} else if (leftScoreCards.isEmpty() && topScoreCards.isEmpty() && rightScoreCards.isEmpty()
+					&& announcements.get("Valat") == false) {
+				valat = true;
+				globalDiff = 250;
+			} else if (!leftScoreCards.isEmpty() && !topScoreCards.isEmpty() && !rightScoreCards.isEmpty()
+					&& announcements.get("Valat") == true) {
+				valat = true;
+				globalDiff = -500;
+			}
 
+		} else if (partner == "LEFT") {
+			if ((playerScoreCards.contains(29) || leftScoreCards.contains(29))
+					&& (playerScoreCards.contains(37) || leftScoreCards.contains(37))
+					&& (playerScoreCards.contains(45) || leftScoreCards.contains(45))
+					&& (playerScoreCards.contains(53) || leftScoreCards.contains(53))
+					&& announcements.get("Kings") == true)
+				globalDiff += 20;
+			else if ((playerScoreCards.contains(29) || leftScoreCards.contains(29))
+					&& (playerScoreCards.contains(37) || leftScoreCards.contains(37))
+					&& (playerScoreCards.contains(45) || leftScoreCards.contains(45))
+					&& (playerScoreCards.contains(53) || leftScoreCards.contains(53))
+					&& announcements.get("Kings") == false)
+				globalDiff += 10;
+			if ((playerScoreCards.contains(0) || leftScoreCards.contains(0))
+					&& (playerScoreCards.contains(20) || leftScoreCards.contains(20))
+					&& (playerScoreCards.contains(21) || leftScoreCards.contains(21))
+					&& announcements.get("Trula") == true)
+				globalDiff += 20;
+			else if ((playerScoreCards.contains(0) || leftScoreCards.contains(0))
+					&& (playerScoreCards.contains(20) || leftScoreCards.contains(20))
+					&& (playerScoreCards.contains(21) || leftScoreCards.contains(21))
+					&& announcements.get("Trula") == false)
+				globalDiff += 10;
+			if (topScoreCards.isEmpty() && rightScoreCards.isEmpty() && announcements.get("Valat") == true) {
+				valat = true;
+				globalDiff = 500;
+			} else if (topScoreCards.isEmpty() && rightScoreCards.isEmpty() && announcements.get("Valat") == false) {
+				valat = true;
+				globalDiff = 250;
+			} else if (!topScoreCards.isEmpty() && !rightScoreCards.isEmpty() && announcements.get("Valat") == true) {
+				valat = true;
+				globalDiff = -500;
+			}
+
+		} else if (partner == "TOP") {
+			if ((playerScoreCards.contains(29) || topScoreCards.contains(29))
+					&& (playerScoreCards.contains(37) || topScoreCards.contains(37))
+					&& (playerScoreCards.contains(45) || topScoreCards.contains(45))
+					&& (playerScoreCards.contains(53) || topScoreCards.contains(53))
+					&& announcements.get("Kings") == true)
+				globalDiff += 20;
+			else if ((playerScoreCards.contains(29) || topScoreCards.contains(29))
+					&& (playerScoreCards.contains(37) || topScoreCards.contains(37))
+					&& (playerScoreCards.contains(45) || topScoreCards.contains(45))
+					&& (playerScoreCards.contains(53) || topScoreCards.contains(53))
+					&& announcements.get("Kings") == false)
+				globalDiff += 10;
+			if ((playerScoreCards.contains(0) || topScoreCards.contains(0))
+					&& (playerScoreCards.contains(20) || topScoreCards.contains(20))
+					&& (playerScoreCards.contains(21) || topScoreCards.contains(21))
+					&& announcements.get("Trula") == true)
+				globalDiff += 20;
+			else if ((playerScoreCards.contains(0) || topScoreCards.contains(0))
+					&& (playerScoreCards.contains(20) || topScoreCards.contains(20))
+					&& (playerScoreCards.contains(21) || topScoreCards.contains(21))
+					&& announcements.get("Trula") == false)
+				globalDiff += 10;
+
+			if (leftScoreCards.isEmpty() && rightScoreCards.isEmpty() && announcements.get("Valat") == true) {
+				valat = true;
+				globalDiff = 500;
+			} else if (leftScoreCards.isEmpty() && rightScoreCards.isEmpty() && announcements.get("Valat") == false) {
+				valat = true;
+				globalDiff = 250;
+			} else if (!leftScoreCards.isEmpty() && !rightScoreCards.isEmpty() && announcements.get("Valat") == true) {
+				valat = true;
+				globalDiff = -500;
+			}
+		} else if (partner == "RIGHT") {
+			if ((playerScoreCards.contains(29) || rightScoreCards.contains(29))
+					&& (playerScoreCards.contains(37) || rightScoreCards.contains(37))
+					&& (playerScoreCards.contains(45) || rightScoreCards.contains(45))
+					&& (playerScoreCards.contains(53) || rightScoreCards.contains(53))
+					&& announcements.get("Kings") == true)
+				globalDiff += 20;
+			else if ((playerScoreCards.contains(29) || rightScoreCards.contains(29))
+					&& (playerScoreCards.contains(37) || rightScoreCards.contains(37))
+					&& (playerScoreCards.contains(45) || rightScoreCards.contains(45))
+					&& (playerScoreCards.contains(53) || rightScoreCards.contains(53))
+					&& announcements.get("Kings") == false)
+				globalDiff += 10;
+			if ((playerScoreCards.contains(0) || rightScoreCards.contains(0))
+					&& (playerScoreCards.contains(20) || rightScoreCards.contains(20))
+					&& (playerScoreCards.contains(21) || rightScoreCards.contains(21))
+					&& announcements.get("Trula") == true)
+				globalDiff += 20;
+			else if ((playerScoreCards.contains(0) || rightScoreCards.contains(0))
+					&& (playerScoreCards.contains(20) || rightScoreCards.contains(20))
+					&& (playerScoreCards.contains(21) || rightScoreCards.contains(21))
+					&& announcements.get("Trula") == false)
+				globalDiff += 10;
+			if (leftScoreCards.isEmpty() && topScoreCards.isEmpty() && announcements.get("Valat") == true) {
+				valat = true;
+				globalDiff = 500;
+			} else if (leftScoreCards.isEmpty() && topScoreCards.isEmpty() && announcements.get("Valat") == false) {
+				valat = true;
+				globalDiff = 250;
+			} else if (!leftScoreCards.isEmpty() && !topScoreCards.isEmpty() && announcements.get("Valat") == true) {
+				valat = true;
+				globalDiff = -500;
+			}
+
+		}
+	}
 
 	public int individualCountScoring(String player) {
 		List<Integer> temp = null;
 		int score = 0;
+
 		if (player == "BOTTOM") {
 			temp = playerScoreCards;
 		} else if (player == "LEFT") {
@@ -446,7 +598,7 @@ public class GameLogic {
 			temp = rightScoreCards;
 		} else if (player == "KEPT") {
 			temp = keptCards;
-		} 
+		}
 		while (!temp.isEmpty()) {
 			if (temp.size() >= 3) {
 				int fullCount = 0;
@@ -500,13 +652,51 @@ public class GameLogic {
 		return score;
 	}
 
+	public void addLastRound(int card) {
+		lastRoundList.add(card);
+	}
+
+	public void lastRoundBonuses() {
+
+		if (lastRoundList.contains(0) && announcements.get("Pagat") == true)
+			globalDiff += 50;
+		else if (lastRoundList.contains(0) && announcements.get("Pagat") == false)
+			globalDiff += 25;
+		if (lastRoundList.contains(kingPicked) && announcements.get("KUltimo") == true)
+			globalDiff += 20;
+		else if (lastRoundList.contains(kingPicked) && announcements.get("KUltimo") == false)
+			globalDiff += 10;
+
+	}
+
 	public void normalScoring() {
+		lastRoundBonuses();
+		globalBonuses();
+
 		int diff = 0;
 		bottomScore = 0;
 		leftScore = 0;
 		topScore = 0;
 		rightScore = 0;
-		if (gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One") {
+		if (valat) {
+			if (gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One") {
+				if (partner == "SELF") {
+					bottomScore = globalDiff;
+				} else if (partner == "LEFT") {
+					bottomScore = globalDiff;
+					leftScore = globalDiff;
+				} else if (partner == "TOP") {
+					bottomScore = globalDiff;
+					topScore = globalDiff;
+				} else if (partner == "RIGHT") {
+					bottomScore = globalDiff;
+					rightScore = globalDiff;
+				}
+			} else {
+				bottomScore = globalDiff;
+			}
+
+		} else if (gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One") {
 
 			int tempPair = 0;
 			if (partner == "SELF") {
@@ -521,23 +711,23 @@ public class GameLogic {
 				tempPair = individualCountScoring("BOTTOM") + individualCountScoring("KEPT")
 						+ individualCountScoring("RIGHT");
 			}
-			diff = tempPair -35;
-			if (diff >=0) {
-				if (gamePicked=="Three")
-					diff+=10;
-				else if (gamePicked=="Two")
-					diff+=20;
-				if (gamePicked=="One")
-					diff+=30;
-			}else {
-				if (gamePicked=="Three")
-					diff-=10;
-				else if (gamePicked=="Two")
-					diff-=20;
-				if (gamePicked=="One")
-					diff-=30;
+			diff = tempPair - 35;
+			if (diff >= 0) {
+				if (gamePicked == "Three")
+					diff += 10 + globalDiff;
+				else if (gamePicked == "Two")
+					diff += 20 + globalDiff;
+				if (gamePicked == "One")
+					diff += 30 + globalDiff;
+			} else {
+				if (gamePicked == "Three")
+					diff -= (10 + globalDiff);
+				else if (gamePicked == "Two")
+					diff -= (20 + globalDiff);
+				if (gamePicked == "One")
+					diff -= (30 + globalDiff);
 			}
-			
+
 			if (partner == "SELF") {
 				bottomScore = diff;
 			} else if (partner == "LEFT") {
@@ -550,24 +740,31 @@ public class GameLogic {
 				bottomScore = diff;
 				rightScore = diff;
 			}
-		}
-		else if (isSolo()) {
-			diff = individualCountScoring("BOTTOM") + individualCountScoring("KEPT")-35;
-			if (diff >=0) {
-				if (gamePicked=="SoloThree")
-					diff+=10;
-				else if (gamePicked=="SoloTwo")
-					diff+=20;
-				if (gamePicked=="SoloOne")
-					diff+=30;
-			}else {
-				if (gamePicked=="SoloThree")
-					diff-=10;
-				else if (gamePicked=="SoloTwo")
-					diff-=20;
-				if (gamePicked=="SoloOne")
-					diff-=30;
+		} else if (isSolo()) {
+			diff = individualCountScoring("BOTTOM") + individualCountScoring("KEPT") - 35;
+			if (diff >= 0) {
+				if (gamePicked == "SoloThree")
+					diff += 40 + globalDiff;
+				else if (gamePicked == "SoloTwo")
+					diff += 50 + globalDiff;
+				else if (gamePicked == "SoloOne")
+					diff += 60 + globalDiff;
+			} else {
+				if (gamePicked == "SoloThree")
+					diff -= (40 + globalDiff);
+				else if (gamePicked == "SoloTwo")
+					diff -= (50 + globalDiff);
+				else if (gamePicked == "SoloOne")
+					diff -= (60 + globalDiff);
+
 			}
+			bottomScore = diff;
+		} else if (gamePicked == "SoloWithout") {
+			diff = individualCountScoring("BOTTOM") - 35;
+			if (diff >= 0)
+				diff += 80 + globalDiff;
+			else
+				diff -= (80 + globalDiff);
 			bottomScore = diff;
 		}
 
@@ -589,15 +786,4 @@ public class GameLogic {
 		return rightScore;
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 }

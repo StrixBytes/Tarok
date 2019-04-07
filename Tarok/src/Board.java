@@ -11,15 +11,8 @@ import java.util.Collections;
 import java.util.List;
 import javax.swing.Timer;
 
-<<<<<<< HEAD
-
-
 import javax.swing.JPanel;
-=======
->>>>>>> branch 'master' of https://github.com/StrixBytes/Tarok.git
 
-
-import javax.swing.JPanel;
 //drawBotHands(g2);
 public class Board extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 1L;
@@ -27,7 +20,7 @@ public class Board extends JPanel implements ActionListener {
 	private boolean ingame;
 	private boolean shuffled;
 	private boolean contractsRemoved;
-	private boolean talonSwitched;
+	private boolean annReady;
 	private boolean kingPicked;
 	private boolean annClosed;
 	private boolean scoreGame;
@@ -35,7 +28,7 @@ public class Board extends JPanel implements ActionListener {
 	private List<Integer> cards = new ArrayList<>();;
 	private CardTranslator ct;
 	private GameLogic gl;
-	private Timer timer;
+	private Timer timer = new Timer(100, this);;
 	ImageLoader il = new ImageLoader();
 	private int cardWidth, LRplayerHeight, topPlayerWidth, startGameWidth, contractWidth, closeAnnWidth;
 	private int talonSwap = 0;
@@ -137,42 +130,77 @@ public class Board extends JPanel implements ActionListener {
 
 	private void drawGame(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
+
 		if (!shuffled)
 			initDeck();
 		setBackground(Color.GRAY);
-		if (gl.contractNotPicked())
+		if (gl.contractNotPicked()) {
 			showContracts(g2);
-
-		if (gl.pickKing() && !kingPicked && !gl.openTalon()) {
-			if (!contractsRemoved)
-				removeContractBounds();
+		} else if (gl.pickKing() && !kingPicked) {
 			showKings(g2);
-		}
-		if (gl.showTalon() && gl.openTalon() && !talonSwitched) {
+		} else if (gl.openTalon() && !annReady) {
 			showTalon(g2);
+		} else if (gl.getGamePicked() == "SoloWithout") {
+			annReady = true;
 		}
-		if (talonSwitched && !annClosed) {
-			showAnnouncements(g2);
-			gl.orderPlayerCards();
-		}
-		if (annClosed && !scoreGame) {
-			drawMainGame(g2);
-		}
-		if (scoreGame) {
-			if (!gameScored) {
-				gl.normalScoring();
-				bottomScore += gl.getBottomScore();
-				leftScore += gl.getLeftScore();
-				topScore += gl.getTopScore();
-				rightScore += gl.getRightScore();
-				gameScored = true;
+		if (gl.normalGames()) {
+			if (annReady && !annClosed) {
+				showAnnouncements(g2);
+				gl.orderPlayerCards();
+			} else if (annClosed && !scoreGame) {
+				drawMainGame(g2);
+			} else if (scoreGame && !gameScored) {
+				threeTwoOneScoring();
+			} else if (gameScored) {
+				replay(g2);
 			}
-			drawScores(g2);
-
 		}
 
+		drawScores(g2);
 		drawPlayerHand(g2);
 		drawBotHands(g2);
+
+		boundsRemover();
+	}
+
+	private void replay(Graphics2D g2) {
+		drawClickable(g2, 49, "/MenuComponents/playButton.png", ResolutionScaler.percentToWidth(20), 40, 40);
+		if (il.isFlag(49)) {
+			initDeck();
+			contractsRemoved = false;
+			annReady = false;
+			kingPicked = false;
+			annClosed = false;
+			scoreGame = false;
+			gameScored = false;
+			talonSwap = 0;
+			rSelectedCard = -1;
+			tSelectedCard = -1;
+			lSelectedCard = -1;
+			selectedCard = -1;
+			for (int i = 0; i < 12; i++)
+				excludeList[i] = 0;
+			gl.reset();
+			il.resetAllFlags();
+			timer.stop();
+			timerCounter = 0;
+			repaint();
+		}
+	}
+
+	private void threeTwoOneScoring() {
+		gl.normalScoring();
+		bottomScore += gl.getBottomScore();
+		leftScore += gl.getLeftScore();
+		topScore += gl.getTopScore();
+		rightScore += gl.getRightScore();
+		gameScored = true;
+		repaint();
+	}
+
+	private void boundsRemover() {
+		if (!gl.contractNotPicked() && !contractsRemoved)
+			removeContractBounds();
 
 	}
 
@@ -197,7 +225,6 @@ public class Board extends JPanel implements ActionListener {
 	}
 
 	private void showTalon(Graphics2D g2) {
-		removePlayerBounds();
 		if (gl.talonSplitter() == 1)
 			for (int i = 0; i < 6; i++) {
 				drawCard(g2, 28 + i, gl.getTalonCards().get(i), 22 + 10 * i, 45);
@@ -221,12 +248,12 @@ public class Board extends JPanel implements ActionListener {
 		if (talonSwap < gl.talonSplitter()) {
 			drawClickable(g2, 34, "/GameComponents/button1.png", startGameWidth, 40, 30);
 			if (il.isFlag(34)) {
-				talonSwitched = true;
+				annReady = true;
 				repaint();
 			}
 			talonSwitcher();
 		} else if (talonSwap == gl.talonSplitter()) {
-			talonSwitched = true;
+			annReady = true;
 
 			repaint();
 		}
@@ -291,33 +318,81 @@ public class Board extends JPanel implements ActionListener {
 	}
 
 	private void drawMainGame(Graphics2D g2) {
-<<<<<<< HEAD
-		timer = new Timer(1000, this);
-=======
-		timer = new Timer(100, this);
->>>>>>> branch 'master' of https://github.com/StrixBytes/Tarok.git
+		if (gl.getlPlayerCards().isEmpty() && gl.gettPlayerCards().isEmpty() && gl.getrPlayerCards().isEmpty()
+				&& gl.getPlayerCards().isEmpty()) {
+			timer.stop();
+			scoreGame = true;
+			repaint();
+		} else if (timerCounter == 6) {
+			timerCounter = 0;
+			timer.stop();
+			System.out.println(ct.cardToImage(selectedCard) + " bot" + ct.cardToImage(lSelectedCard) + " left"
+					+ ct.cardToImage(tSelectedCard) + " top" + ct.cardToImage(rSelectedCard) + " right");
+			System.out.println(ct.cardToImage(gl.getPlayedCard()) + " played Card");
+			gl.roundWinner();
+			gl.setPlayedCard(-1);
+			rSelectedCard = -1;
+			tSelectedCard = -1;
+			lSelectedCard = -1;
+			selectedCard = -1;
+
+		} else if (timer.isRunning()) {
+			timerCounter++;
+
+		}
+
 		if (gl.roundStart() == "BOTTOM") {
-			if (timerCounter == 0)
+			if (timerCounter == 0) {
 				selectCard();
-			gl.setPlayedCard(selectedCard);
+				gl.setPlayedCard(selectedCard);
+			} else if (timerCounter == 1)
+				lSelectedCard = gl.cardComparatorBot(gl.getlPlayerCards());
+			else if (timerCounter == 2)
+				tSelectedCard = gl.cardComparatorBot(gl.gettPlayerCards());
+			else if (timerCounter == 3)
+				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
 		}
 		if (gl.roundStart() == "LEFT") {
 			if (timerCounter == 0)
 				timer.start();
-			else if (timerCounter == 4)
+			else if (timerCounter == 1)
+				lSelectedCard = gl.cardPlayBot(gl.getlPlayerCards());
+			else if (timerCounter == 2)
+				tSelectedCard = gl.cardComparatorBot(gl.gettPlayerCards());
+			else if (timerCounter == 3)
+				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
+			else if (timerCounter == 4) {
+				timer.stop();
 				selectCard();
+			}
 		}
 		if (gl.roundStart() == "TOP") {
 			if (timerCounter == 0)
 				timer.start();
-			else if (timerCounter == 3)
+			else if (timerCounter == 1)
+				tSelectedCard = gl.cardPlayBot(gl.gettPlayerCards());
+			else if (timerCounter == 2)
+				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
+			else if (timerCounter == 3) {
+				timer.stop();
 				selectCard();
+			} else if (timerCounter == 4)
+				lSelectedCard = gl.cardComparatorBot(gl.getlPlayerCards());
+
 		}
 		if (gl.roundStart() == "RIGHT") {
 			if (timerCounter == 0)
 				timer.start();
-			else if (timerCounter == 2)
+			else if (timerCounter == 1)
+				rSelectedCard = gl.cardPlayBot(gl.getrPlayerCards());
+			else if (timerCounter == 2) {
+				timer.stop();
 				selectCard();
+			} else if (timerCounter == 3)
+				lSelectedCard = gl.cardComparatorBot(gl.getlPlayerCards());
+			else if (timerCounter == 4)
+				tSelectedCard = gl.cardComparatorBot(gl.gettPlayerCards());
+
 		}
 
 		drawCard(g2, 45, selectedCard, 47, 46);
@@ -325,31 +400,28 @@ public class Board extends JPanel implements ActionListener {
 		drawCard(g2, 47, tSelectedCard, 47, 21);
 		drawCard(g2, 48, lSelectedCard, 39, 34);
 
-		drawScores(g2);
 	}
 
 	private void drawScores(Graphics2D g2) {
 		System.setProperty("file.encoding", "UTF-8");
-		Font scoreFont= new Font("Helvetica",Font.PLAIN,ResolutionScaler.percentToHeight(2));
+		Font scoreFont = new Font("Helvetica", Font.PLAIN, ResolutionScaler.percentToHeight(2));
 		FontMetrics fm = getFontMetrics(scoreFont);
 		g2.setColor(Color.WHITE);
 		g2.setFont(scoreFont);
-<<<<<<< HEAD
-		String bScore ="Vaše Točke: "+bottomScore;
-		String lScore = "Levi Tčke: " + leftScore;
+
+		String bScore = "Vaše Točke: " + bottomScore;
+		String lScore = "Levi Točke: " + leftScore;
 		String tScore = "Zgornji Točke: " + topScore;
 		String rScore = "Desni Točke: " + rightScore;
-=======
-		String bScore ="Vase Tocke: "+bottomScore;
-		String lScore = "Levi Tocke: " + leftScore;
-		String tScore = "Zgornji Tocke: " + topScore;
-		String rScore = "Desni Tocke: " + rightScore;
->>>>>>> branch 'master' of https://github.com/StrixBytes/Tarok.git
+
 		g2.drawString(bScore, ResolutionScaler.percentToWidth(90), ResolutionScaler.percentToHeight(96));
-		g2.drawString(lScore, ResolutionScaler.percentToWidth(5)-fm.stringWidth(lScore)/2, ResolutionScaler.percentToHeight(2));
-		g2.drawString(tScore, ResolutionScaler.percentToWidth(50)-fm.stringWidth(tScore)/2, ResolutionScaler.percentToHeight(2));
-		g2.drawString(rScore, ResolutionScaler.percentToWidth(95)-fm.stringWidth(rScore)/2, ResolutionScaler.percentToHeight(2));
-		
+		g2.drawString(lScore, ResolutionScaler.percentToWidth(5) - fm.stringWidth(lScore) / 2,
+				ResolutionScaler.percentToHeight(2));
+		g2.drawString(tScore, ResolutionScaler.percentToWidth(50) - fm.stringWidth(tScore) / 2,
+				ResolutionScaler.percentToHeight(2));
+		g2.drawString(rScore, ResolutionScaler.percentToWidth(95) - fm.stringWidth(rScore) / 2,
+				ResolutionScaler.percentToHeight(2));
+
 	}
 
 	private int selectCard() {
@@ -358,6 +430,8 @@ public class Board extends JPanel implements ActionListener {
 				selectedCard = gl.getPlayerCards().get(i);
 				il.resetFlag(1 + i);
 				gl.setTempBottom(selectedCard);
+				if (gl.getPlayerCards().size()==1)
+					gl.addLastRound(selectedCard);
 				gl.getPlayerCards().remove(i);
 				timer.start();
 			}
@@ -414,12 +488,6 @@ public class Board extends JPanel implements ActionListener {
 		System.out.println("Contract Flags Removed");
 	}
 
-	private void removePlayerBounds() {
-		for (int i = 0; i < 12; i++)
-			il.clearBounds(1 + i);
-		System.out.println("Player Flags Removed");
-	}
-
 	public void mouseReleased(MouseEvent e) {
 		System.out.println("Point " + e.getPoint());
 		for (int i = 0; i <= il.getMaxIndex(); i++) {
@@ -440,68 +508,6 @@ public class Board extends JPanel implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (gl.getlPlayerCards().isEmpty() && gl.gettPlayerCards().isEmpty() && gl.getrPlayerCards().isEmpty()
-				&& gl.getPlayerCards().isEmpty()) {
-			((Timer) e.getSource()).stop();
-			scoreGame = true;
-		} else if (timerCounter == 6) {
-			timerCounter = 0;
-			((Timer) e.getSource()).stop();
-			System.out.println(ct.cardToImage(selectedCard) + " bot" + ct.cardToImage(lSelectedCard) + " left"
-					+ ct.cardToImage(tSelectedCard) + " top" + ct.cardToImage(rSelectedCard) + " right");
-			System.out.println(ct.cardToImage(gl.getPlayedCard()) + " played Card");
-			gl.roundWinner();
-			gl.setPlayedCard(-1);
-			rSelectedCard = -1;
-			tSelectedCard = -1;
-			lSelectedCard = -1;
-			selectedCard = -1;
-
-			System.out.println(ct.cardToImage(gl.getPlayedCard()) + " played Card");
-			System.out.println(gl.roundStart());
-		} else if (((Timer) e.getSource()).isRunning()) {
-			timerCounter++;
-
-		}
-		if (gl.roundStart() == "BOTTOM") {
-			if (timerCounter == 1)
-				lSelectedCard = gl.cardComparatorBot(gl.getlPlayerCards());
-			else if (timerCounter == 2)
-				tSelectedCard = gl.cardComparatorBot(gl.gettPlayerCards());
-			else if (timerCounter == 3)
-				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
-
-		} else if (gl.roundStart() == "LEFT") {
-			if (timerCounter == 1)
-				lSelectedCard = gl.cardPlayBot(gl.getlPlayerCards());
-			else if (timerCounter == 2)
-				tSelectedCard = gl.cardComparatorBot(gl.gettPlayerCards());
-			else if (timerCounter == 3)
-				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
-			else if (timerCounter == 4)
-				((Timer) e.getSource()).stop();
-
-		} else if (gl.roundStart() == "TOP") {
-			if (timerCounter == 1)
-				tSelectedCard = gl.cardPlayBot(gl.gettPlayerCards());
-			else if (timerCounter == 2)
-				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
-			else if (timerCounter == 3)
-				((Timer) e.getSource()).stop();
-			else if (timerCounter == 4)
-				lSelectedCard = gl.cardComparatorBot(gl.getlPlayerCards());
-
-		} else if (gl.roundStart() == "RIGHT") {
-			if (timerCounter == 1)
-				rSelectedCard = gl.cardPlayBot(gl.getrPlayerCards());
-			else if (timerCounter == 2)
-				((Timer) e.getSource()).stop();
-			else if (timerCounter == 3)
-				lSelectedCard = gl.cardComparatorBot(gl.getlPlayerCards());
-			else if (timerCounter == 4)
-				tSelectedCard = gl.cardComparatorBot(gl.gettPlayerCards());
-
-		}
 
 		repaint();
 //		System.out.println(timerCounter);
