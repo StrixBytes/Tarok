@@ -510,7 +510,6 @@ public class Board extends JPanel implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 
 		repaint();
-//		System.out.println(timerCounter);
 
 	}
 
