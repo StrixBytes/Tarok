@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
+//drawBotHands(g2);
 public class GameLogic {
 	private static final long serialVersionUID = 1L;
 	private ImageLoader il;

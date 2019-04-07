@@ -14,7 +14,7 @@ import javax.swing.Timer;
 
 
 import javax.swing.JPanel;
-
+//drawBotHands(g2);
 public class Board extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	private boolean inmenu;
