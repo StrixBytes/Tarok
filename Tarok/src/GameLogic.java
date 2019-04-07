@@ -5,7 +5,11 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+<<<<<<< HEAD
 
+=======
+//drawBotHands(g2);
+>>>>>>> branch 'master' of https://github.com/StrixBytes/Tarok.git
 public class GameLogic {
 	private static final long serialVersionUID = 1L;
 	private ImageLoader il;

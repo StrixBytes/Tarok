@@ -11,10 +11,16 @@ import java.util.Collections;
 import java.util.List;
 import javax.swing.Timer;
 
+<<<<<<< HEAD
 
 
 import javax.swing.JPanel;
+=======
+>>>>>>> branch 'master' of https://github.com/StrixBytes/Tarok.git
 
+
+import javax.swing.JPanel;
+//drawBotHands(g2);
 public class Board extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	private boolean inmenu;
@@ -285,7 +291,11 @@ public class Board extends JPanel implements ActionListener {
 	}
 
 	private void drawMainGame(Graphics2D g2) {
+<<<<<<< HEAD
 		timer = new Timer(1000, this);
+=======
+		timer = new Timer(100, this);
+>>>>>>> branch 'master' of https://github.com/StrixBytes/Tarok.git
 		if (gl.roundStart() == "BOTTOM") {
 			if (timerCounter == 0)
 				selectCard();
@@ -324,10 +334,17 @@ public class Board extends JPanel implements ActionListener {
 		FontMetrics fm = getFontMetrics(scoreFont);
 		g2.setColor(Color.WHITE);
 		g2.setFont(scoreFont);
+<<<<<<< HEAD
 		String bScore ="Vaše Točke: "+bottomScore;
 		String lScore = "Levi Tčke: " + leftScore;
 		String tScore = "Zgornji Točke: " + topScore;
 		String rScore = "Desni Točke: " + rightScore;
+=======
+		String bScore ="Vase Tocke: "+bottomScore;
+		String lScore = "Levi Tocke: " + leftScore;
+		String tScore = "Zgornji Tocke: " + topScore;
+		String rScore = "Desni Tocke: " + rightScore;
+>>>>>>> branch 'master' of https://github.com/StrixBytes/Tarok.git
 		g2.drawString(bScore, ResolutionScaler.percentToWidth(90), ResolutionScaler.percentToHeight(96));
 		g2.drawString(lScore, ResolutionScaler.percentToWidth(5)-fm.stringWidth(lScore)/2, ResolutionScaler.percentToHeight(2));
 		g2.drawString(tScore, ResolutionScaler.percentToWidth(50)-fm.stringWidth(tScore)/2, ResolutionScaler.percentToHeight(2));
