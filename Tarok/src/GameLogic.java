@@ -21,7 +21,7 @@ public class GameLogic {
 	private int globalDiff = 0;
 	private int tempRight, tempTop, tempLeft, tempBottom;
 	private int bottomScore, leftScore, topScore, rightScore;
-	private boolean valat;
+	private boolean valat, specialGameMade = true;
 
 	public GameLogic(ImageLoader il, List<Integer> cards) {
 		this.il = il;
@@ -404,7 +404,7 @@ public class GameLogic {
 		}
 		return temp;
 	}
-
+	
 	public void roundWinner() {
 		int temp = playedCard;
 
@@ -433,18 +433,71 @@ public class GameLogic {
 		if (temp == tempRight) {
 			gameRoundCounter = 1;
 			rightScoreCards.addAll(score);
+			if (gamePicked=="Klop"&&!talonCards.isEmpty()) {
+				rightScoreCards.add(talonCards.get(0));
+				talonCards.remove(0);
+			}
 		} else if (temp == tempTop) {
 			gameRoundCounter = 2;
 			topScoreCards.addAll(score);
+			if (gamePicked=="Klop"&&!talonCards.isEmpty()) {
+				topScoreCards.add(talonCards.get(0));
+				talonCards.remove(0);
+			}
 		} else if (temp == tempLeft) {
 			gameRoundCounter = 3;
 			leftScoreCards.addAll(score);
+			if (gamePicked=="Klop"&&!talonCards.isEmpty()) {
+				leftScoreCards.add(talonCards.get(0));
+				talonCards.remove(0);
+			}
 		} else if (temp == tempBottom) {
 			gameRoundCounter = 0;
 			playerScoreCards.addAll(score);
+			if (gamePicked=="Klop"&&!talonCards.isEmpty()) {
+				playerScoreCards.add(talonCards.get(0));
+				talonCards.remove(0);
+			}
 		} else
 			System.out.println("Error");
 
+	}
+	
+	public void  colorValatRoundWinner() {
+		int temp = playedCard;
+		int[] comparables = { tempBottom, tempLeft, tempRight, tempTop };
+		List<Integer> score = Arrays.asList(tempBottom, tempLeft, tempRight, tempTop);
+		
+		if (ct.cardSuit(playedCard) == "SUIT.TAROK") {
+			for (int i : comparables)
+				if (ct.cardSuit(i) == "SUIT.TAROK" && ct.cardStrength(i) > ct.cardStrength(temp))
+					temp = i;
+		} else {
+			for (int i : comparables)
+				if (ct.cardSuit(playedCard) == ct.cardSuit(i) && ct.cardStrength(i) > ct.cardStrength(temp))
+					temp = i;
+		}
+		
+		if (temp == tempRight) {
+			gameRoundCounter = 1;
+			rightScoreCards.addAll(score);
+
+		} else if (temp == tempTop) {
+			gameRoundCounter = 2;
+			topScoreCards.addAll(score);
+
+		} else if (temp == tempLeft) {
+			gameRoundCounter = 3;
+			leftScoreCards.addAll(score);
+
+		} else if (temp == tempBottom) {
+			gameRoundCounter = 0;
+			playerScoreCards.addAll(score);
+
+		} else
+			System.out.println("Error");
+
+		
 	}
 
 	public void addKeptCards(int cardIndex) {
@@ -454,25 +507,27 @@ public class GameLogic {
 	public void globalBonuses() {
 		if (partner == "SELF" || isSolo() || gamePicked == "SoloWithout") {
 			if (playerScoreCards.contains(29) && playerScoreCards.contains(37) && playerScoreCards.contains(45)
-					&& playerScoreCards.contains(53) && announcements.get("Kings") == true)
-				globalDiff += 20;
-			else if (playerScoreCards.contains(29) && playerScoreCards.contains(37) && playerScoreCards.contains(45)
-					&& playerScoreCards.contains(53) && announcements.get("Kings") == false)
-				globalDiff += 10;
-			if (playerScoreCards.contains(0) && playerScoreCards.contains(20) && playerScoreCards.contains(21)
-					&& announcements.get("Trula") == true)
-				globalDiff += 20;
-			else if (playerScoreCards.contains(0) && playerScoreCards.contains(20) && playerScoreCards.contains(21)
-					&& announcements.get("Trula") == false)
-				globalDiff += 10;
-			if (leftScoreCards.isEmpty() && topScoreCards.isEmpty() && rightScoreCards.isEmpty()
-					&& announcements.get("Valat") == true) {
+					&& playerScoreCards.contains(53)) {
+				if (announcements.get("Kings") == true)
+					globalDiff += 20;
+				else
+					globalDiff += 10;
+			}
+
+			if (playerScoreCards.contains(0) && playerScoreCards.contains(20) && playerScoreCards.contains(21)) {
+				if (announcements.get("Trula") == true)
+					globalDiff += 20;
+				else
+					globalDiff += 10;
+			}
+
+			if (leftScoreCards.isEmpty() && topScoreCards.isEmpty() && rightScoreCards.isEmpty()) {
 				valat = true;
-				globalDiff = 500;
-			} else if (leftScoreCards.isEmpty() && topScoreCards.isEmpty() && rightScoreCards.isEmpty()
-					&& announcements.get("Valat") == false) {
-				valat = true;
-				globalDiff = 250;
+				if (announcements.get("Valat") == true)
+					globalDiff = 500;
+				else
+					globalDiff = 250;
+
 			} else if (!leftScoreCards.isEmpty() && !topScoreCards.isEmpty() && !rightScoreCards.isEmpty()
 					&& announcements.get("Valat") == true) {
 				valat = true;
@@ -483,31 +538,26 @@ public class GameLogic {
 			if ((playerScoreCards.contains(29) || leftScoreCards.contains(29))
 					&& (playerScoreCards.contains(37) || leftScoreCards.contains(37))
 					&& (playerScoreCards.contains(45) || leftScoreCards.contains(45))
-					&& (playerScoreCards.contains(53) || leftScoreCards.contains(53))
-					&& announcements.get("Kings") == true)
-				globalDiff += 20;
-			else if ((playerScoreCards.contains(29) || leftScoreCards.contains(29))
-					&& (playerScoreCards.contains(37) || leftScoreCards.contains(37))
-					&& (playerScoreCards.contains(45) || leftScoreCards.contains(45))
-					&& (playerScoreCards.contains(53) || leftScoreCards.contains(53))
-					&& announcements.get("Kings") == false)
-				globalDiff += 10;
+					&& (playerScoreCards.contains(53) || leftScoreCards.contains(53))) {
+				if (announcements.get("Kings") == true)
+					globalDiff += 20;
+				else
+					globalDiff += 10;
+			}
 			if ((playerScoreCards.contains(0) || leftScoreCards.contains(0))
 					&& (playerScoreCards.contains(20) || leftScoreCards.contains(20))
-					&& (playerScoreCards.contains(21) || leftScoreCards.contains(21))
-					&& announcements.get("Trula") == true)
-				globalDiff += 20;
-			else if ((playerScoreCards.contains(0) || leftScoreCards.contains(0))
-					&& (playerScoreCards.contains(20) || leftScoreCards.contains(20))
-					&& (playerScoreCards.contains(21) || leftScoreCards.contains(21))
-					&& announcements.get("Trula") == false)
-				globalDiff += 10;
-			if (topScoreCards.isEmpty() && rightScoreCards.isEmpty() && announcements.get("Valat") == true) {
+					&& (playerScoreCards.contains(21) || leftScoreCards.contains(21))) {
+				if (announcements.get("Trula") == true)
+					globalDiff += 20;
+				else
+					globalDiff += 10;
+			}
+			if (topScoreCards.isEmpty() && rightScoreCards.isEmpty()) {
 				valat = true;
-				globalDiff = 500;
-			} else if (topScoreCards.isEmpty() && rightScoreCards.isEmpty() && announcements.get("Valat") == false) {
-				valat = true;
-				globalDiff = 250;
+				if (announcements.get("Valat") == true)
+					globalDiff = 500;
+				else
+					globalDiff = 250;
 			} else if (!topScoreCards.isEmpty() && !rightScoreCards.isEmpty() && announcements.get("Valat") == true) {
 				valat = true;
 				globalDiff = -500;
@@ -517,32 +567,27 @@ public class GameLogic {
 			if ((playerScoreCards.contains(29) || topScoreCards.contains(29))
 					&& (playerScoreCards.contains(37) || topScoreCards.contains(37))
 					&& (playerScoreCards.contains(45) || topScoreCards.contains(45))
-					&& (playerScoreCards.contains(53) || topScoreCards.contains(53))
-					&& announcements.get("Kings") == true)
-				globalDiff += 20;
-			else if ((playerScoreCards.contains(29) || topScoreCards.contains(29))
-					&& (playerScoreCards.contains(37) || topScoreCards.contains(37))
-					&& (playerScoreCards.contains(45) || topScoreCards.contains(45))
-					&& (playerScoreCards.contains(53) || topScoreCards.contains(53))
-					&& announcements.get("Kings") == false)
-				globalDiff += 10;
+					&& (playerScoreCards.contains(53) || topScoreCards.contains(53))) {
+				if (announcements.get("Kings") == true)
+					globalDiff += 20;
+				else
+					globalDiff += 10;
+			}
 			if ((playerScoreCards.contains(0) || topScoreCards.contains(0))
 					&& (playerScoreCards.contains(20) || topScoreCards.contains(20))
-					&& (playerScoreCards.contains(21) || topScoreCards.contains(21))
-					&& announcements.get("Trula") == true)
-				globalDiff += 20;
-			else if ((playerScoreCards.contains(0) || topScoreCards.contains(0))
-					&& (playerScoreCards.contains(20) || topScoreCards.contains(20))
-					&& (playerScoreCards.contains(21) || topScoreCards.contains(21))
-					&& announcements.get("Trula") == false)
-				globalDiff += 10;
+					&& (playerScoreCards.contains(21) || topScoreCards.contains(21))) {
+				if (announcements.get("Trula") == true)
+					globalDiff += 20;
+				else
+					globalDiff += 10;
+			}
 
-			if (leftScoreCards.isEmpty() && rightScoreCards.isEmpty() && announcements.get("Valat") == true) {
+			if (leftScoreCards.isEmpty() && rightScoreCards.isEmpty()) {
 				valat = true;
-				globalDiff = 500;
-			} else if (leftScoreCards.isEmpty() && rightScoreCards.isEmpty() && announcements.get("Valat") == false) {
-				valat = true;
-				globalDiff = 250;
+				if (announcements.get("Valat") == true)
+					globalDiff = 500;
+				else
+					globalDiff = 250;
 			} else if (!leftScoreCards.isEmpty() && !rightScoreCards.isEmpty() && announcements.get("Valat") == true) {
 				valat = true;
 				globalDiff = -500;
@@ -551,31 +596,27 @@ public class GameLogic {
 			if ((playerScoreCards.contains(29) || rightScoreCards.contains(29))
 					&& (playerScoreCards.contains(37) || rightScoreCards.contains(37))
 					&& (playerScoreCards.contains(45) || rightScoreCards.contains(45))
-					&& (playerScoreCards.contains(53) || rightScoreCards.contains(53))
-					&& announcements.get("Kings") == true)
-				globalDiff += 20;
-			else if ((playerScoreCards.contains(29) || rightScoreCards.contains(29))
-					&& (playerScoreCards.contains(37) || rightScoreCards.contains(37))
-					&& (playerScoreCards.contains(45) || rightScoreCards.contains(45))
-					&& (playerScoreCards.contains(53) || rightScoreCards.contains(53))
-					&& announcements.get("Kings") == false)
-				globalDiff += 10;
+					&& (playerScoreCards.contains(53) || rightScoreCards.contains(53))) {
+				if (announcements.get("Kings") == true)
+					globalDiff += 20;
+				else
+					globalDiff += 10;
+			}
 			if ((playerScoreCards.contains(0) || rightScoreCards.contains(0))
 					&& (playerScoreCards.contains(20) || rightScoreCards.contains(20))
-					&& (playerScoreCards.contains(21) || rightScoreCards.contains(21))
-					&& announcements.get("Trula") == true)
-				globalDiff += 20;
-			else if ((playerScoreCards.contains(0) || rightScoreCards.contains(0))
-					&& (playerScoreCards.contains(20) || rightScoreCards.contains(20))
-					&& (playerScoreCards.contains(21) || rightScoreCards.contains(21))
-					&& announcements.get("Trula") == false)
-				globalDiff += 10;
-			if (leftScoreCards.isEmpty() && topScoreCards.isEmpty() && announcements.get("Valat") == true) {
+					&& (playerScoreCards.contains(21) || rightScoreCards.contains(21))) {
+				if (announcements.get("Trula") == true)
+					globalDiff += 20;
+				else
+					globalDiff += 10;
+			}
+
+			if (leftScoreCards.isEmpty() && topScoreCards.isEmpty()) {
 				valat = true;
-				globalDiff = 500;
-			} else if (leftScoreCards.isEmpty() && topScoreCards.isEmpty() && announcements.get("Valat") == false) {
-				valat = true;
-				globalDiff = 250;
+				if (announcements.get("Valat") == true)
+					globalDiff = 500;
+				else
+					globalDiff = 250;
 			} else if (!leftScoreCards.isEmpty() && !topScoreCards.isEmpty() && announcements.get("Valat") == true) {
 				valat = true;
 				globalDiff = -500;
@@ -601,8 +642,8 @@ public class GameLogic {
 		}
 		while (!temp.isEmpty()) {
 			if (temp.size() >= 3) {
-				int fullCount = 0;
 				int tempScore = 0;
+
 
 				for (int i = 0; i < 3; i++) {
 					int tempCard = temp.get(0);
@@ -614,14 +655,13 @@ public class GameLogic {
 					} else if ((ct.cardSuit(tempCard) == "SUIT.TAROK" && (ct.cardStrength(tempCard) == 22
 							|| ct.cardStrength(tempCard) == 21 || ct.cardStrength(tempCard) == 1))) {
 						tempScore += 5;
-						fullCount++;
 					} else {
 						tempScore += ct.cardStrength(tempCard) - 3;
-						fullCount++;
 					}
-					if (fullCount > 1)
-						tempScore -= fullCount - 1;
+					
+						
 				}
+				tempScore -= 2;
 				score += tempScore;
 			} else if (temp.size() < 3) {
 				int fullCount = 0;
@@ -634,6 +674,7 @@ public class GameLogic {
 							|| ct.cardStrength(tempCard) != 21 || ct.cardStrength(tempCard) != 1))
 							|| (ct.cardSuit(tempCard) != "SUIT.TAROK" && ct.cardStrength(tempCard) < 5)) {
 						tempScore++;
+						fullCount++;
 					} else if ((ct.cardSuit(tempCard) == "SUIT.TAROK" && (ct.cardStrength(tempCard) == 22
 							|| ct.cardStrength(tempCard) == 21 || ct.cardStrength(tempCard) == 1))) {
 						tempScore += 5;
@@ -642,9 +683,10 @@ public class GameLogic {
 						tempScore += ct.cardStrength(tempCard) - 3;
 						fullCount++;
 					}
-					if (fullCount > 1)
-						tempScore -= fullCount - 1;
+					
 				}
+				if (fullCount > 1)
+						tempScore -= fullCount - 1;
 				score += tempScore;
 			}
 		}
@@ -768,6 +810,84 @@ public class GameLogic {
 			bottomScore = diff;
 		}
 
+	}
+
+	public void setSpecialGameMade(boolean specialGameMade) {
+		this.specialGameMade = specialGameMade;
+	}
+
+	public void ValatGameScoring() {
+		leftScore = 0;
+		topScore = 0;
+		rightScore = 0;
+		if (specialGameMade)
+			bottomScore = 500;
+		else if (!specialGameMade)
+			bottomScore = -500;
+	}
+
+	public boolean isBeggarGame() {
+		boolean temp;
+		if (gamePicked == "OpenBeggar" || gamePicked == "Beggar")
+			temp = true;
+		else
+			temp = false;
+		return temp;
+	}
+
+	public void beggarGamesScoring() {
+		leftScore = 0;
+		topScore = 0;
+		rightScore = 0;
+		if (specialGameMade) {
+			if (gamePicked == "Beggar")
+				bottomScore = 70;
+			else if (gamePicked == "OpenBeggar")
+				bottomScore = 90;
+		} else  {
+			if (gamePicked == "Beggar")
+				bottomScore = -70;
+			else if (gamePicked == "OpenBeggar")
+				bottomScore = -90;
+		}
+			
+	}
+	
+	public void klopGameScoring() {
+		bottomScore = 0;
+		leftScore = 0;
+		topScore = 0;
+		rightScore = 0;
+		int tempPlayer = individualCountScoring("BOTTOM");
+		int tempRight = individualCountScoring("RIGHT");
+		int tempTop = individualCountScoring("TOP");
+		int tempLeft = individualCountScoring("LEFT");
+		
+		if(tempPlayer>35) 
+			bottomScore = -70;
+		else if(tempRight>35) 
+			rightScore = -70;
+		else if(tempTop>35) 
+			topScore = -70;
+		else if(tempLeft>35) 
+			leftScore = -70;
+		else {
+			bottomScore = -tempPlayer;
+			leftScore = -tempLeft;
+			topScore = -tempTop;
+			rightScore = -tempRight;
+		}
+	}
+	
+	public void colorValatGameScoring() {
+		leftScore = 0;
+		topScore = 0;
+		rightScore = 0;
+		
+		if (specialGameMade)
+			bottomScore = 125;
+		else if (!specialGameMade)
+			bottomScore = -125;
 	}
 
 	public int getBottomScore() {

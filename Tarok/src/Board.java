@@ -25,6 +25,7 @@ public class Board extends JPanel implements ActionListener {
 	private boolean annClosed;
 	private boolean scoreGame;
 	private boolean gameScored;
+	private boolean firstRound = true;
 	private List<Integer> cards = new ArrayList<>();;
 	private CardTranslator ct;
 	private GameLogic gl;
@@ -33,6 +34,7 @@ public class Board extends JPanel implements ActionListener {
 	private int cardWidth, LRplayerHeight, topPlayerWidth, startGameWidth, contractWidth, closeAnnWidth;
 	private int talonSwap = 0;
 	private int selectedCard = -1, rSelectedCard = -1, tSelectedCard = -1, lSelectedCard = -1;
+	private int previousCard = -1, rPrevious = -1, tPrevious = -1, lPrevious = -1;
 	private int excludeList[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	private int timerCounter = 0;
 	private int bottomScore = 0, leftScore = 0, topScore = 0, rightScore = 0;
@@ -154,6 +156,65 @@ public class Board extends JPanel implements ActionListener {
 			} else if (gameScored) {
 				replay(g2);
 			}
+		} else if (gl.getGamePicked() == "Valat") {
+			if (!annClosed) {
+				gl.orderPlayerCards();
+				annClosed = true;
+			} else if (gl.roundStart() == "BOTTOM" && !scoreGame) {
+				drawMainGame(g2);
+			} else if (gl.roundStart() != "BOTTOM" && !scoreGame) {
+				gl.setSpecialGameMade(false);
+				scoreGame = true;
+			} else if (scoreGame && !gameScored) {
+				valatScoring();
+			} else if (gameScored) {
+				replay(g2);
+			}
+
+		} else if (gl.isBeggarGame()) {
+			if (!annClosed) {
+				gl.orderPlayerCards();
+				annClosed = true;
+			} else if (gl.roundStart() == "BOTTOM" && !scoreGame) {
+				if (firstRound) {
+					drawMainGame(g2);
+				} else {
+					gl.setSpecialGameMade(false);
+					scoreGame = true;
+					repaint();
+				}
+			} else if (gl.roundStart() != "BOTTOM" && !scoreGame) {
+				drawMainGame(g2);
+			} else if (scoreGame && !gameScored) {
+				beggarGamesScoring();
+			} else if (gameScored) {
+				replay(g2);
+			}
+		} else if (gl.getGamePicked() == "Klop") {
+			if (!annClosed) {
+				gl.orderPlayerCards();
+				annClosed = true;
+			} else if (annClosed && !scoreGame) {
+				drawMainGame(g2);
+			} else if (scoreGame && !gameScored) {
+				klopScoring();
+			} else if (gameScored) {
+				replay(g2);
+			}
+		} else if (gl.getGamePicked() == "ColorValat") {
+			if (!annClosed) {
+				gl.orderPlayerCards();
+				annClosed = true;
+			} else if (gl.roundStart() == "BOTTOM" && !scoreGame) {
+				drawMainGame(g2);
+			} else if (gl.roundStart() != "BOTTOM" && !scoreGame) {
+				gl.setSpecialGameMade(false);
+				scoreGame = true;
+			} else if (scoreGame && !gameScored) {
+				colorValatScoring();
+			} else if (gameScored) {
+				replay(g2);
+			}
 		}
 
 		drawScores(g2);
@@ -162,6 +223,7 @@ public class Board extends JPanel implements ActionListener {
 
 		boundsRemover();
 	}
+
 
 	private void replay(Graphics2D g2) {
 		drawClickable(g2, 49, "/MenuComponents/playButton.png", ResolutionScaler.percentToWidth(20), 40, 40);
@@ -173,11 +235,16 @@ public class Board extends JPanel implements ActionListener {
 			annClosed = false;
 			scoreGame = false;
 			gameScored = false;
+			firstRound = true;
 			talonSwap = 0;
 			rSelectedCard = -1;
 			tSelectedCard = -1;
 			lSelectedCard = -1;
 			selectedCard = -1;
+			previousCard = -1;
+			rPrevious = -1;
+			tPrevious = -1;
+			lPrevious = -1;
 			for (int i = 0; i < 12; i++)
 				excludeList[i] = 0;
 			gl.reset();
@@ -190,6 +257,48 @@ public class Board extends JPanel implements ActionListener {
 
 	private void threeTwoOneScoring() {
 		gl.normalScoring();
+		bottomScore += gl.getBottomScore();
+		leftScore += gl.getLeftScore();
+		topScore += gl.getTopScore();
+		rightScore += gl.getRightScore();
+		gameScored = true;
+		repaint();
+	}
+
+	private void valatScoring() {
+		gl.ValatGameScoring();
+		bottomScore += gl.getBottomScore();
+		leftScore += gl.getLeftScore();
+		topScore += gl.getTopScore();
+		rightScore += gl.getRightScore();
+		gameScored = true;
+		repaint();
+	}
+
+	private void beggarGamesScoring() {
+		gl.beggarGamesScoring();
+		bottomScore += gl.getBottomScore();
+		leftScore += gl.getLeftScore();
+		topScore += gl.getTopScore();
+		rightScore += gl.getRightScore();
+		gameScored = true;
+		repaint();
+
+	}
+
+	private void klopScoring() {
+		gl.klopGameScoring();
+		bottomScore += gl.getBottomScore();
+		leftScore += gl.getLeftScore();
+		topScore += gl.getTopScore();
+		rightScore += gl.getRightScore();
+		gameScored = true;
+		repaint();
+	}
+	
+
+	private void colorValatScoring() {
+		gl.colorValatGameScoring();
 		bottomScore += gl.getBottomScore();
 		leftScore += gl.getLeftScore();
 		topScore += gl.getTopScore();
@@ -268,7 +377,7 @@ public class Board extends JPanel implements ActionListener {
 						&& cards.get(j - 1) != 37 && cards.get(j - 1) != 45 && cards.get(j - 1) != 53) {
 					il.resetFlag(j);
 					excludeList[j - 1] = j;
-					gl.addKeptCards(cards.get(cardIndexes[talonSwap]));
+					gl.addKeptCards(cards.get(j - 1));
 					Collections.swap(cards, j - 1, cardIndexes[talonSwap]);
 					gl.setPlayerCards(cards.subList(0, 12));
 					gl.setTalonCards(cards.subList(48, 54));
@@ -329,13 +438,18 @@ public class Board extends JPanel implements ActionListener {
 			System.out.println(ct.cardToImage(selectedCard) + " bot" + ct.cardToImage(lSelectedCard) + " left"
 					+ ct.cardToImage(tSelectedCard) + " top" + ct.cardToImage(rSelectedCard) + " right");
 			System.out.println(ct.cardToImage(gl.getPlayedCard()) + " played Card");
-			gl.roundWinner();
+			if (gl.getGamePicked() == "ColorValat"){
+				gl.colorValatRoundWinner();
+			} else
+				gl.roundWinner();
+			storePrevious();
 			gl.setPlayedCard(-1);
 			rSelectedCard = -1;
 			tSelectedCard = -1;
 			lSelectedCard = -1;
 			selectedCard = -1;
-
+			firstRound = false;
+			repaint();
 		} else if (timer.isRunning()) {
 			timerCounter++;
 
@@ -399,7 +513,23 @@ public class Board extends JPanel implements ActionListener {
 		drawCard(g2, 46, rSelectedCard, 55, 34);
 		drawCard(g2, 47, tSelectedCard, 47, 21);
 		drawCard(g2, 48, lSelectedCard, 39, 34);
+		if (gl.isBeggarGame())
+			drawPrevious(g2);
 
+	}
+
+	private void storePrevious() {
+		previousCard = selectedCard;
+		rPrevious = rSelectedCard;
+		tPrevious = tSelectedCard;
+		lPrevious = lSelectedCard;
+	}
+
+	private void drawPrevious(Graphics2D g2) {
+		drawCard(g2, 49, previousCard, 16, 26);
+		drawCard(g2, 50, rPrevious, 16, 46);
+		drawCard(g2, 51, tPrevious, 22, 26);
+		drawCard(g2, 52, lPrevious, 22, 46);
 	}
 
 	private void drawScores(Graphics2D g2) {
@@ -430,7 +560,7 @@ public class Board extends JPanel implements ActionListener {
 				selectedCard = gl.getPlayerCards().get(i);
 				il.resetFlag(1 + i);
 				gl.setTempBottom(selectedCard);
-				if (gl.getPlayerCards().size()==1)
+				if (gl.getPlayerCards().size() == 1)
 					gl.addLastRound(selectedCard);
 				gl.getPlayerCards().remove(i);
 				timer.start();
