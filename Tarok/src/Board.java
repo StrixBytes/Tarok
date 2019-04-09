@@ -2,15 +2,17 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.FontMetrics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.swing.Timer;
-
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
 //drawBotHands(g2);
@@ -31,16 +33,13 @@ public class Board extends JPanel implements ActionListener {
 	private GameLogic gl;
 	private Timer timer = new Timer(100, this);;
 	ImageLoader il = new ImageLoader();
-	private int cardWidth, LRplayerHeight, topPlayerWidth, startGameWidth, contractWidth, closeAnnWidth;
+	private int cardWidth, LRplayerWidth, topPlayerWidth, startGameWidth, contractWidth, closeAnnWidth;
 	private int talonSwap = 0;
 	private int selectedCard = -1, rSelectedCard = -1, tSelectedCard = -1, lSelectedCard = -1;
 	private int previousCard = -1, rPrevious = -1, tPrevious = -1, lPrevious = -1;
 	private int excludeList[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	private int timerCounter = 0;
 	private int bottomScore = 0, leftScore = 0, topScore = 0, rightScore = 0;
-	private final int BACKGROUNDINDEXL = 13;
-	private final int BACKGROUNDINDEXR = 14;
-	private final int BACKGROUNDINDEXT = 15;
 
 	public Board() {
 		initBoard();
@@ -51,12 +50,11 @@ public class Board extends JPanel implements ActionListener {
 		setFocusable(true);
 		setBackground(Color.BLACK);
 		inmenu = true;
-
 	}
 
 	private void setElementSize() {
 		cardWidth = ResolutionScaler.percentToWidth(6);
-		LRplayerHeight = ResolutionScaler.percentToHeight(12);
+		LRplayerWidth = ResolutionScaler.percentToWidth(12);
 		topPlayerWidth = ResolutionScaler.percentToWidth(6);
 		startGameWidth = ResolutionScaler.percentToWidth(20);
 		contractWidth = ResolutionScaler.percentToWidth(10);
@@ -89,16 +87,7 @@ public class Board extends JPanel implements ActionListener {
 		il.setCoordinates(-1, ResolutionScaler.percentToWidth(xInPercent),
 				ResolutionScaler.percentToHeight(yInPercent));
 		g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
-	}
 
-	private void drawClickableReverse(Graphics g2, int index, String imgName, int height, int xInPercent,
-			int yInPercent) {
-		il.setImgIndex(index);
-		il.loadImage(imgName);
-		il.setDimensions(-1, il.getNewImageWidth(height), height);
-		il.setCoordinates(-1, ResolutionScaler.percentToWidth(xInPercent),
-				ResolutionScaler.percentToHeight(yInPercent));
-		g2.drawImage(il.getImg(-1), il.getX(-1), il.getY(-1), il.getWidth(-1), il.getHeight(-1), this);
 	}
 
 	private void drawCard(Graphics g2, int index, int cardIndex, int xInPercent, int yInPercent) {
@@ -133,9 +122,11 @@ public class Board extends JPanel implements ActionListener {
 	private void drawGame(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
 
+		drawBackgound(g2, "Game");
+
 		if (!shuffled)
 			initDeck();
-		setBackground(Color.GRAY);
+
 		if (gl.contractNotPicked()) {
 			showContracts(g2);
 		} else if (gl.pickKing() && !kingPicked) {
@@ -224,11 +215,21 @@ public class Board extends JPanel implements ActionListener {
 		boundsRemover();
 	}
 
+	private void drawBackgound(Graphics2D g2, String scene) {
+		Image temp = null;
+		if (scene == "Game") {
+			URL imageUrl = this.getClass().getResource("/GameComponents/GameBackground.png");
+			ImageIcon ii = new ImageIcon(imageUrl);
+			temp = ii.getImage();
+		}
+		g2.drawImage(temp, 0, 0, ResolutionScaler.getScreenWidth(), ResolutionScaler.getScreenHeight(), this);
+
+	}
 
 	private void replay(Graphics2D g2) {
 		drawClickable(g2, 49, "/MenuComponents/playButton.png", ResolutionScaler.percentToWidth(20), 40, 40);
 		if (il.isFlag(49)) {
-			initDeck();
+			shuffled = false;
 			contractsRemoved = false;
 			annReady = false;
 			kingPicked = false;
@@ -295,7 +296,6 @@ public class Board extends JPanel implements ActionListener {
 		gameScored = true;
 		repaint();
 	}
-	
 
 	private void colorValatScoring() {
 		gl.colorValatGameScoring();
@@ -310,10 +310,21 @@ public class Board extends JPanel implements ActionListener {
 	private void boundsRemover() {
 		if (!gl.contractNotPicked() && !contractsRemoved)
 			removeContractBounds();
+		il.clearBounds(13);
+		il.clearBounds(14);
+		il.clearBounds(15);
 
 	}
 
 	private void showContracts(Graphics2D g2) {
+		drawClickable(g2, 14, "/GameComponents/SelectionBackground.png", ResolutionScaler.percentToWidth(32), 34, 35);
+		String contractMsg = "Izberi Igro";
+		Font contractFont = new Font("Georgia", Font.ITALIC, ResolutionScaler.percentToHeight(2));
+		FontMetrics fm = getFontMetrics(contractFont);
+		g2.setColor(Color.decode("#f4b942"));
+		g2.setFont(contractFont);
+		g2.drawString(contractMsg, ResolutionScaler.percentToWidth(50) - fm.stringWidth(contractMsg) / 2,
+				ResolutionScaler.percentToHeight(37));
 		int index = 0;
 		String[] pngName = { "/GameComponents/contractButtonThree.png", "/GameComponents/contractButtonTwo.png",
 				"/GameComponents/contractButtonOne.png", "/GameComponents/contractButtonKlop.png",
@@ -321,9 +332,9 @@ public class Board extends JPanel implements ActionListener {
 				"/GameComponents/contractButtonSoloOne.png", "/GameComponents/contractButtonSoloWithout.png",
 				"/GameComponents/contractButtonBeggar.png", "/GameComponents/contractButtonOpenBeggar.png",
 				"/GameComponents/contractButtonColorValat.png", "/GameComponents/contractButtonValat.png" };
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 4; j++) {
-				drawClickable(g2, 16 + index, pngName[index], contractWidth, 30 + j * 10, 20 + i * 20);
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 3; j++) {
+				drawClickable(g2, 16 + index, pngName[index], contractWidth, 35 + j * 10, 38 + i * 6);
 				index++;
 			}
 		}
@@ -438,7 +449,7 @@ public class Board extends JPanel implements ActionListener {
 			System.out.println(ct.cardToImage(selectedCard) + " bot" + ct.cardToImage(lSelectedCard) + " left"
 					+ ct.cardToImage(tSelectedCard) + " top" + ct.cardToImage(rSelectedCard) + " right");
 			System.out.println(ct.cardToImage(gl.getPlayedCard()) + " played Card");
-			if (gl.getGamePicked() == "ColorValat"){
+			if (gl.getGamePicked() == "ColorValat") {
 				gl.colorValatRoundWinner();
 			} else
 				gl.roundWinner();
@@ -533,8 +544,8 @@ public class Board extends JPanel implements ActionListener {
 	}
 
 	private void drawScores(Graphics2D g2) {
-		System.setProperty("file.encoding", "UTF-8");
-		Font scoreFont = new Font("Helvetica", Font.PLAIN, ResolutionScaler.percentToHeight(2));
+
+		Font scoreFont = new Font("Georgia", Font.ITALIC, ResolutionScaler.percentToHeight(2));
 		FontMetrics fm = getFontMetrics(scoreFont);
 		g2.setColor(Color.WHITE);
 		g2.setFont(scoreFont);
@@ -572,7 +583,7 @@ public class Board extends JPanel implements ActionListener {
 
 	private void drawPlayerHand(Graphics2D g2) {
 		for (int i = 0; i < gl.getPlayerCards().size(); i++) {
-			drawCard(g2, 1 + i, gl.getPlayerCards().get(i), 14 + 6 * i, 70);
+			drawCard(g2, 1 + i, gl.getPlayerCards().get(i), 14 + 6 * i, 76);
 
 		}
 	}
@@ -580,18 +591,17 @@ public class Board extends JPanel implements ActionListener {
 	private void drawBotHands(Graphics2D g2) {
 		// Left Player
 		for (int i = 0; i < gl.getlPlayerCards().size(); i++) {
-			drawClickableReverse(g2, BACKGROUNDINDEXL, "/GameComponents/cardBackgroundL.png", LRplayerHeight, 2,
-					28 + 3 * i);
+			drawClickable(g2, 13, "/GameComponents/cardBackgroundL.png", LRplayerWidth, 3, 28 + 3 * i);
 		}
 		// Right Player
 		for (int i = 0; i < gl.getrPlayerCards().size(); i++) {
-			drawClickableReverse(g2, BACKGROUNDINDEXR, "/GameComponents/cardBackgroundL.png", LRplayerHeight, 88,
-					28 + 3 * i);
+			drawClickable(g2, 14, "/GameComponents/cardBackgroundL.png", LRplayerWidth, 85, 28 + 3 * i);
 		}
 
 		// Top Player
 		for (int i = 0; i < gl.gettPlayerCards().size(); i++) {
-			drawClickable(g2, BACKGROUNDINDEXT, "/GameComponents/cardBackgroundP.png", topPlayerWidth, 32 + 3 * i, 3);
+			drawClickable(g2, 15, "/GameComponents/cardBackgroundP.png", topPlayerWidth, 32 + 3 * i, 4);
+
 		}
 	}
 
