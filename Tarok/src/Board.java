@@ -19,9 +19,17 @@ import javax.swing.Timer;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
-//drawBotHands(g2);
+// Razred za risanje grafičnih elementov in določanje preostanka logike.
 public class Board extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 1L;
+
+	private CardTranslator ct;
+	private GameLogic gl;
+	private ImageLoader il = new ImageLoader();
+	private Timer timer = new Timer(500, this);;
+	private Font gameFont = new Font("Georgia", Font.ITALIC, ResolutionScaler.percentToHeight(2));
+	private FontMetrics fm = getFontMetrics(gameFont);
+
 	private boolean ingame;
 	private boolean shuffled;
 	private boolean contractsRemoved;
@@ -31,14 +39,10 @@ public class Board extends JPanel implements ActionListener {
 	private boolean scoreGame;
 	private boolean gameScored;
 	private boolean firstRound = true;
+
 	private List<Integer> cards = new ArrayList<>();;
-	private CardTranslator ct;
-	private GameLogic gl;
-	private Timer timer = new Timer(100, this);;
-	ImageLoader il = new ImageLoader();
-	Font gameFont = new Font("Georgia", Font.ITALIC, ResolutionScaler.percentToHeight(2));
-	FontMetrics fm = getFontMetrics(gameFont);
-	private int cardWidth, LRplayerWidth, topPlayerWidth, buttonWidth,  menuButtonWidth;
+
+	private int cardWidth, LRplayerWidth, topPlayerWidth, buttonWidth, menuButtonWidth;
 	private int talonSwap = 0;
 	private int selectedCard = -1, rSelectedCard = -1, tSelectedCard = -1, lSelectedCard = -1;
 	private int previousCard = -1, rPrevious = -1, tPrevious = -1, lPrevious = -1;
@@ -50,39 +54,35 @@ public class Board extends JPanel implements ActionListener {
 		initBoard();
 	}
 
+	// Inicializacija plošče/JPanel-a.
 	private void initBoard() {
 		addKeyListener(new ClickAdapter());
 		setFocusable(true);
 		setBackground(Color.BLACK);
 	}
 
+	// Nastavi velikost repetativnih elementov.
 	private void setElementSize() {
 		cardWidth = ResolutionScaler.percentToWidth(6);
 		LRplayerWidth = ResolutionScaler.percentToWidth(12);
 		topPlayerWidth = ResolutionScaler.percentToWidth(6);
 		buttonWidth = ResolutionScaler.percentToWidth(10);
-		menuButtonWidth=ResolutionScaler.percentToWidth(16);
+		menuButtonWidth = ResolutionScaler.percentToWidth(16);
 
 	}
 
+	// Inicializacija igralnega kupčka.
 	private void initDeck() {
 		cards.clear();
 		for (int i = 0; i < 54; i++)
 			cards.add(i);
 		Collections.shuffle(cards);
-		printDeckOrder();
 		ct = new CardTranslator();
 		gl = new GameLogic(il, cards);
-
 		shuffled = true;
 	}
 
-	private void printDeckOrder() {
-		System.out.print("DeckOrder: ");
-		for (int i : cards)
-			System.out.print(i + " ");
-	}
-
+	// Metoda za risanje elementa, ki zazna klik.
 	private void drawClickable(Graphics g2, int index, String imgName, int width, int xInPercent, int yInPercent) {
 		il.setImgIndex(index);
 		il.loadImage(imgName);
@@ -93,6 +93,7 @@ public class Board extends JPanel implements ActionListener {
 
 	}
 
+	// Metoda za risanje kart, ki zaznajo klik.
 	private void drawCard(Graphics g2, int index, int cardIndex, int xInPercent, int yInPercent) {
 		if (cardIndex != -1) {
 			il.setImgIndex(index);
@@ -105,23 +106,56 @@ public class Board extends JPanel implements ActionListener {
 
 	}
 
+	// Metoda, ki nariše elemente, klicana večkrat.
 	@Override
 	protected void paintComponent(Graphics g) {
+		Graphics2D g2 = (Graphics2D) g;
 		super.paintComponent(g);
 
 		removeAll();
 		if (!ingame) {
 			setElementSize();
-			drawMenu(g);
+			drawMenu(g2);
 		} else
-			drawGame(g);
+			drawGame(g2);
+
+		g2.setFont(gameFont);
+		g2.setColor(Color.white);
+		String esc = "Za izhod pritisnite ESC";
+		g2.drawString(esc, ResolutionScaler.percentToWidth(3), ResolutionScaler.percentToHeight(99));
 	}
 
-	private void drawGame(Graphics g) {
-		Graphics2D g2 = (Graphics2D) g;
-		g2.setFont(gameFont);
-		drawBackgound(g2, "Game");
+	// Metoda za risanje menija.
+	private void drawMenu(Graphics2D g2) {
 
+		drawBackgound(g2, "Menu");
+
+		drawClickable(g2, 0, "/MenuComponents/startGameButton.png", menuButtonWidth, 42, 46);
+		drawClickable(g2, 1, "/MenuComponents/rulesButton.png", menuButtonWidth, 42, 52);
+
+		if (il.isFlag(0)) {
+			ingame = true;
+			removeMenuBounds();
+			il.resetFlag(0);
+			repaint();
+		} else if (il.isFlag(1)) {
+			Desktop d = Desktop.getDesktop();
+			try {
+				d.browse(new URI("https://valat.si/pravila"));
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (URISyntaxException e) {
+				e.printStackTrace();
+			}
+			il.resetFlag(1);
+		}
+
+	}
+
+	// Metoda za risanje igre.
+	private void drawGame(Graphics2D g2) {
+		drawBackgound(g2, "Game");
+		g2.setFont(gameFont);
 		if (!shuffled)
 			initDeck();
 
@@ -213,6 +247,7 @@ public class Board extends JPanel implements ActionListener {
 		boundsRemover();
 	}
 
+	// Metoda za risanje ozadja.
 	private void drawBackgound(Graphics2D g2, String scene) {
 		Image temp = null;
 		if (scene == "Game") {
@@ -228,6 +263,7 @@ public class Board extends JPanel implements ActionListener {
 
 	}
 
+	// Metoda, ki ponastavi vrednosti spremenljivk za igranje več zaporednih iger.
 	private void replay(Graphics2D g2) {
 		drawClickable(g2, 14, "/GameComponents/SelectionBackground.png", ResolutionScaler.percentToWidth(12), 44, 45);
 		String replayMsg = "Konec Igre";
@@ -263,6 +299,7 @@ public class Board extends JPanel implements ActionListener {
 		}
 	}
 
+	// Metoda za prikaz točkovanja iger tri, dva, ena in solo verzij.
 	private void threeTwoOneScoring() {
 		gl.normalScoring();
 		bottomScore += gl.getBottomScore();
@@ -273,6 +310,7 @@ public class Board extends JPanel implements ActionListener {
 		repaint();
 	}
 
+	// Metoda za prikaz točkovanja valata.
 	private void valatScoring() {
 		gl.ValatGameScoring();
 		bottomScore += gl.getBottomScore();
@@ -283,6 +321,7 @@ public class Board extends JPanel implements ActionListener {
 		repaint();
 	}
 
+	// Metoda za prikaz točkovanja beračev.
 	private void beggarGamesScoring() {
 		gl.beggarGamesScoring();
 		bottomScore += gl.getBottomScore();
@@ -294,6 +333,7 @@ public class Board extends JPanel implements ActionListener {
 
 	}
 
+	// Metoda za prikaz točkovanja klopa.
 	private void klopScoring() {
 		gl.klopGameScoring();
 		bottomScore += gl.getBottomScore();
@@ -304,6 +344,7 @@ public class Board extends JPanel implements ActionListener {
 		repaint();
 	}
 
+	// Metoda za prikaz točkovanja barvnega valata.
 	private void colorValatScoring() {
 		gl.colorValatGameScoring();
 		bottomScore += gl.getBottomScore();
@@ -314,6 +355,7 @@ public class Board extends JPanel implements ActionListener {
 		repaint();
 	}
 
+	// Metoda ki odstrani meje nepotrebnih za klik elementov.
 	private void boundsRemover() {
 		if (!gl.contractNotPicked() && !contractsRemoved)
 			removeContractBounds();
@@ -323,6 +365,7 @@ public class Board extends JPanel implements ActionListener {
 
 	}
 
+	// Metoda za prikaz licitacij.
 	private void showContracts(Graphics2D g2) {
 		drawClickable(g2, 14, "/GameComponents/SelectionBackground.png", ResolutionScaler.percentToWidth(32), 34, 35);
 		String contractMsg = "Izberi Igro";
@@ -348,6 +391,7 @@ public class Board extends JPanel implements ActionListener {
 
 	}
 
+	// Metoda za prikaz talona.
 	private void showTalon(Graphics2D g2) {
 		if (gl.talonSplitter() == 1)
 			for (int i = 0; i < 6; i++) {
@@ -392,6 +436,7 @@ public class Board extends JPanel implements ActionListener {
 		}
 	}
 
+	// Metoda za menjavo kart s talonom.
 	private void talonSwitcher() {
 
 		int cardIndexes[] = gl.switchWithTalon();
@@ -412,9 +457,18 @@ public class Board extends JPanel implements ActionListener {
 
 	}
 
+	// Metoda za prikaz kraljev.
 	private void showKings(Graphics2D g2) {
+		drawClickable(g2, 14, "/GameComponents/SelectionBackground.png", ResolutionScaler.percentToWidth(10), 45, 34);
+		String annMsg1 = "Izberi Kralja";
+		String annMsg2 = "Oziroma Soigralca";
+		g2.setColor(Color.decode("#f4b942"));
+		g2.drawString(annMsg1, ResolutionScaler.percentToWidth(50) - fm.stringWidth(annMsg1) / 2,
+				ResolutionScaler.percentToHeight(37));
+		g2.drawString(annMsg2, ResolutionScaler.percentToWidth(50) - fm.stringWidth(annMsg2) / 2,
+				ResolutionScaler.percentToHeight(41));
 		for (int i = 0; i < 4; i++)
-			drawCard(g2, 35 + i, 29 + i * 8, 17 + 20 * i, 45);
+			drawCard(g2, 35 + i, 29 + i * 8, 32 + 10 * i, 45);
 
 		gl.kingPicker();
 		if (gl.getKingPicked() != -1) {
@@ -427,6 +481,7 @@ public class Board extends JPanel implements ActionListener {
 
 	}
 
+	// Metoda za prikaz napovedi.
 	private void showAnnouncements(Graphics2D g2) {
 		drawClickable(g2, 14, "/GameComponents/SelectionBackground.png", ResolutionScaler.percentToWidth(32), 34, 35);
 		String annMsg = "Izberi Napovedi";
@@ -455,6 +510,7 @@ public class Board extends JPanel implements ActionListener {
 		}
 	}
 
+	// Metoda za risanje poteka igre s časovnikom.
 	private void drawMainGame(Graphics2D g2) {
 		if (gl.getlPlayerCards().isEmpty() && gl.gettPlayerCards().isEmpty() && gl.getrPlayerCards().isEmpty()
 				&& gl.getPlayerCards().isEmpty()) {
@@ -479,9 +535,6 @@ public class Board extends JPanel implements ActionListener {
 			selectedCard = -1;
 			firstRound = false;
 			repaint();
-		} else if (timer.isRunning()) {
-			timerCounter++;
-
 		}
 
 		if (gl.roundStart() == "BOTTOM") {
@@ -502,8 +555,10 @@ public class Board extends JPanel implements ActionListener {
 				lSelectedCard = gl.cardPlayBot(gl.getlPlayerCards());
 			else if (timerCounter == 2)
 				tSelectedCard = gl.cardComparatorBot(gl.gettPlayerCards());
-			else if (timerCounter == 3)
+			else if (timerCounter == 3) {
 				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
+				removePlayerFlags();
+			}
 			else if (timerCounter == 4) {
 				timer.stop();
 				selectCard();
@@ -514,8 +569,10 @@ public class Board extends JPanel implements ActionListener {
 				timer.start();
 			else if (timerCounter == 1)
 				tSelectedCard = gl.cardPlayBot(gl.gettPlayerCards());
-			else if (timerCounter == 2)
+			else if (timerCounter == 2) {
 				rSelectedCard = gl.cardComparatorBot(gl.getrPlayerCards());
+				removePlayerFlags();
+			}
 			else if (timerCounter == 3) {
 				timer.stop();
 				selectCard();
@@ -526,8 +583,10 @@ public class Board extends JPanel implements ActionListener {
 		if (gl.roundStart() == "RIGHT") {
 			if (timerCounter == 0)
 				timer.start();
-			else if (timerCounter == 1)
+			else if (timerCounter == 1) {
 				rSelectedCard = gl.cardPlayBot(gl.getrPlayerCards());
+				removePlayerFlags();
+			}
 			else if (timerCounter == 2) {
 				timer.stop();
 				selectCard();
@@ -547,6 +606,7 @@ public class Board extends JPanel implements ActionListener {
 
 	}
 
+	// Metoda za beleženje kart prejšnjega kroga za igre berač.
 	private void storePrevious() {
 		previousCard = selectedCard;
 		rPrevious = rSelectedCard;
@@ -554,35 +614,35 @@ public class Board extends JPanel implements ActionListener {
 		lPrevious = lSelectedCard;
 	}
 
+	// Metoda za risanje prejšnjega kroga.
 	private void drawPrevious(Graphics2D g2) {
-		drawCard(g2, 49, previousCard, 16, 26);
-		drawCard(g2, 50, rPrevious, 16, 46);
-		drawCard(g2, 51, tPrevious, 22, 26);
-		drawCard(g2, 52, lPrevious, 22, 46);
+		drawCard(g2, 49, previousCard, 3, 4);
+		drawCard(g2, 50, rPrevious, 9, 4);
+		drawCard(g2, 51, tPrevious, 15, 4);
+		drawCard(g2, 52, lPrevious, 21, 4);
 	}
 
+	// Metoda za posodabljanje točk.
 	private void drawScores(Graphics2D g2) {
 
-		Font scoreFont = new Font("Georgia", Font.ITALIC, ResolutionScaler.percentToHeight(2));
-		FontMetrics fm = getFontMetrics(scoreFont);
 		g2.setColor(Color.WHITE);
-		g2.setFont(scoreFont);
 
 		String bScore = "Vaše Točke: " + bottomScore;
 		String lScore = "Levi Točke: " + leftScore;
 		String tScore = "Zgornji Točke: " + topScore;
 		String rScore = "Desni Točke: " + rightScore;
 
-		g2.drawString(bScore, ResolutionScaler.percentToWidth(90), ResolutionScaler.percentToHeight(98));
-		g2.drawString(lScore, ResolutionScaler.percentToWidth(5) - fm.stringWidth(lScore) / 2,
+		g2.drawString(bScore, ResolutionScaler.percentToWidth(90), ResolutionScaler.percentToHeight(99));
+		g2.drawString(lScore, ResolutionScaler.percentToWidth(6) - fm.stringWidth(lScore) / 2,
 				ResolutionScaler.percentToHeight(2));
 		g2.drawString(tScore, ResolutionScaler.percentToWidth(50) - fm.stringWidth(tScore) / 2,
 				ResolutionScaler.percentToHeight(2));
-		g2.drawString(rScore, ResolutionScaler.percentToWidth(95) - fm.stringWidth(rScore) / 2,
+		g2.drawString(rScore, ResolutionScaler.percentToWidth(93) - fm.stringWidth(rScore) / 2,
 				ResolutionScaler.percentToHeight(2));
 
 	}
 
+	// Metoda za izbiro igralčeve karte.
 	private int selectCard() {
 		for (int i = 0; i < gl.getPlayerCards().size(); i++) {
 			if (il.isFlag(1 + i)) {
@@ -599,6 +659,7 @@ public class Board extends JPanel implements ActionListener {
 		return selectedCard;
 	}
 
+	// Metoda za izris igralčeve roke.
 	private void drawPlayerHand(Graphics2D g2) {
 		for (int i = 0; i < gl.getPlayerCards().size(); i++) {
 			drawCard(g2, 1 + i, gl.getPlayerCards().get(i), 14 + 6 * i, 76);
@@ -606,61 +667,46 @@ public class Board extends JPanel implements ActionListener {
 		}
 	}
 
+	// Metoda za izris rok računalniških igralcev.
 	private void drawBotHands(Graphics2D g2) {
-		// Left Player
+		// Levi igralec
 		for (int i = 0; i < gl.getlPlayerCards().size(); i++) {
 			drawClickable(g2, 13, "/GameComponents/cardBackgroundL.png", LRplayerWidth, 3, 28 + 3 * i);
 		}
-		// Right Player
+		// Desni igralec
 		for (int i = 0; i < gl.getrPlayerCards().size(); i++) {
 			drawClickable(g2, 14, "/GameComponents/cardBackgroundL.png", LRplayerWidth, 85, 28 + 3 * i);
 		}
 
-		// Top Player
+		// Zgornji igralec
 		for (int i = 0; i < gl.gettPlayerCards().size(); i++) {
 			drawClickable(g2, 15, "/GameComponents/cardBackgroundP.png", topPlayerWidth, 36 + 2 * i, 4);
 
 		}
 	}
 
-	private void drawMenu(Graphics g) {
-		Graphics2D g2 = (Graphics2D) g;
-		drawBackgound(g2, "Menu");
-
-			drawClickable(g2, 0, "/MenuComponents/startGameButton.png", menuButtonWidth, 42, 46);
-			drawClickable(g2, 1, "/MenuComponents/rulesButton.png", menuButtonWidth, 42, 52);
-		
-		if (il.isFlag(0)) {
-			ingame = true;
-			removeMenuBounds();
-			il.resetFlag(0);
-			repaint();
-		}else if (il.isFlag(1)) {
-			Desktop d = Desktop.getDesktop();
-			try {
-				d.browse(new URI("https://valat.si/pravila"));
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (URISyntaxException e) {
-				e.printStackTrace();
-			}
-			il.resetFlag(1);
-		}
-
-	}
-
+	// Metoda za odstranjevanje specifičnih mej elementov.
 	private void removeMenuBounds() {
 		il.clearBounds(0); // Play Button
 		System.out.println("Menu Flags Removed");
 	}
 
+	// Metoda za odstranjevanje specifičnih mej elementov.
 	private void removeContractBounds() {
 		contractsRemoved = true;
 		for (int i = 0; i < 12; i++)
 			il.clearBounds(16 + i);
 		System.out.println("Contract Flags Removed");
 	}
+	
+	// Metoda za odstranjevanje zastavic elementov.
+		private void removePlayerFlags() {
+			for (int i = 1; i < 13; i++)
+				il.resetFlag(i);
+			System.out.println("Player Flags Removed");
+		}
 
+	// Preveri zastavice elementov na ekranu.
 	public void mouseReleased(MouseEvent e) {
 		System.out.println("Point " + e.getPoint());
 		for (int i = 0; i <= il.getMaxIndex(); i++) {
@@ -676,14 +722,18 @@ public class Board extends JPanel implements ActionListener {
 
 					}
 		}
+		if (!timer.isRunning())
 		repaint();
 	}
 
+	// Metoda, ki jo uporablja časovnik.
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		if (((Timer)e.getSource()).isRunning()) {
+			timerCounter++;
 
+		}
 		repaint();
-
 	}
 
 }

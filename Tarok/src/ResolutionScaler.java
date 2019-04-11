@@ -1,30 +1,28 @@
 import java.awt.Dimension;
 import java.awt.Toolkit;
 
+// Razred, za postavitev elementov glede na delež zaslona namesto na fiksno x in y pozicijo.
 public class ResolutionScaler {
 	private static Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	private static int screenWidth = screenSize.width;
 	private static int screenHeight = screenSize.height;
 	private static Dimension screenResolution = new Dimension(screenWidth, screenHeight);
 
+	// S podanim deležom, nam vrne pozicijo glede na resolucijo.
 	public static int percentToWidth(int percent) {
 		double toPercent = (double) percent / 100.0;
 		return (int) (screenWidth * toPercent);
 	}
 
+	// S podanim deležom, nam vrne pozicijo glede na resolucijo.
 	public static int percentToHeight(int percent) {
 		double toPercent = (double) percent / 100.0;
 		return (int) (screenHeight * toPercent);
 	}
-	
-	public static int keepRatio(int sourceWidth, int sourceHeight, int desiredHeight) {
-		double ratio = (double) sourceWidth / (double) sourceHeight;
-		return (int) (desiredHeight * ratio);
-	}
 
+	// Getterji za podatkovne tipe razreda.
 	public static Dimension getScreenResolution() {
-		System.out.println(screenWidth);
-		System.out.println(screenHeight);
+
 		return screenResolution;
 	}
 

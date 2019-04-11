@@ -1,8 +1,10 @@
+// Razred, ki številkam določi karto (pripadajočo sliko, barvo in moč).
 public class CardTranslator {
-	
+
 	public CardTranslator() {
 	}
 
+	// Slika glede na številko.
 	public String cardToImage(int i) {
 		String imgName = null;
 		if (i < 22)
@@ -15,10 +17,10 @@ public class CardTranslator {
 			imgName = "/Cards/S" + (i - 37) + ".jpg";
 		else if (46 <= i && i < 54)
 			imgName = "/Cards/D" + (i - 45) + ".jpg";
-//		System.out.println(imgName);
 		return imgName;
 	}
 
+	// Barva glede na številko.
 	public String cardSuit(int i) {
 		String suit = null;
 		if (i < 22)
@@ -34,6 +36,7 @@ public class CardTranslator {
 		return suit;
 	}
 
+	// Moč glede na številko.
 	public int cardStrength(int i) {
 		int strength = 0;
 		if (i < 22)

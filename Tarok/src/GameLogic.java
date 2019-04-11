@@ -4,23 +4,28 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+// Razred, ki določa logiko igre.
 public class GameLogic {
-	private static final long serialVersionUID = 1L;
+	
 	private ImageLoader il;
-	private List<Integer> cards;
 	private CardTranslator ct;
-	private String gamePicked = null;
-	private int kingPicked = -1;
+	
+	private List<Integer> cards;
 	private List<Integer> playerCards, lPlayerCards, tPlayerCards, rPlayerCards, talonCards, keptCards;
 	private List<Integer> playerScoreCards, leftScoreCards, topScoreCards, rightScoreCards;
 	private List<Integer> lastRoundList;
 	private HashMap<String, Boolean> announcements;
+	
+	private String gamePicked = null;
 	private String partner = null;
+	
+	private int kingPicked = -1;
 	private int playedCard = -1;
 	private int gameRoundCounter = 0;
 	private int globalDiff = 0;
 	private int tempRight, tempTop, tempLeft, tempBottom;
 	private int bottomScore, leftScore, topScore, rightScore;
+	
 	private boolean valat, specialGameMade = true;
 
 	public GameLogic(ImageLoader il, List<Integer> cards) {
@@ -31,16 +36,8 @@ public class GameLogic {
 		initAnnouncements();
 	}
 
-	public void reset() {
-		dealCards();
-		initAnnouncements();
-		gamePicked = null;
-		kingPicked = -1;
-		partner = null;
-		gameRoundCounter = 0;
-		globalDiff = 0;
-	}
-
+	// Razdeli karte med igralce iz skupnega kupa kart, inicializira ostale
+	// ArrayListe.
 	private void dealCards() {
 		playerCards = new ArrayList<Integer>(cards.subList(0, 12));
 		lPlayerCards = new ArrayList<Integer>(cards.subList(12, 24));
@@ -72,6 +69,7 @@ public class GameLogic {
 		System.out.println();
 	}
 
+	// Inicializira napovedi.
 	private void initAnnouncements() {
 		announcements = new HashMap<String, Boolean>();
 		announcements.put("Kings", false);
@@ -82,50 +80,12 @@ public class GameLogic {
 
 	}
 
+	// Uredi igralčeve karte po vrsti.
 	public void orderPlayerCards() {
 		Collections.sort(playerCards);
 	}
 
-	public List<Integer> getPlayerCards() {
-		return playerCards;
-	}
-
-	public void setPlayerCards(List<Integer> playerCards) {
-		this.playerCards = playerCards;
-	}
-
-	public List<Integer> getlPlayerCards() {
-		return lPlayerCards;
-	}
-
-	public void setlPlayerCards(List<Integer> lPlayerCards) {
-		this.lPlayerCards = lPlayerCards;
-	}
-
-	public List<Integer> gettPlayerCards() {
-		return tPlayerCards;
-	}
-
-	public void settPlayerCards(List<Integer> tPlayerCards) {
-		this.tPlayerCards = tPlayerCards;
-	}
-
-	public List<Integer> getrPlayerCards() {
-		return rPlayerCards;
-	}
-
-	public void setrPlayerCards(List<Integer> rPlayerCards) {
-		this.rPlayerCards = rPlayerCards;
-	}
-
-	public List<Integer> getTalonCards() {
-		return talonCards;
-	}
-
-	public void setTalonCards(List<Integer> talonCards) {
-		this.talonCards = talonCards;
-	}
-
+	// Preveri katera licitacija/igra je bila izbrana.
 	public void contractPicker() {
 		if (il.isFlag(16))
 			gamePicked = "Three";
@@ -153,6 +113,7 @@ public class GameLogic {
 			gamePicked = "Valat";
 	}
 
+	// Preveri, če je igra že izbrana.
 	public boolean contractNotPicked() {
 		boolean contract;
 		if (gamePicked == null)
@@ -162,10 +123,8 @@ public class GameLogic {
 		return contract;
 	}
 
-	public String getGamePicked() {
-		return gamePicked;
-	}
-
+	// Vrne true, če je igra igrana in točkovana na normalen način (tri, dva, ena,
+	// in solo verzije njih).
 	public boolean normalGames() {
 		boolean isNormal;
 		if (gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One" || gamePicked == "SoloThree"
@@ -176,6 +135,7 @@ public class GameLogic {
 		return isNormal;
 	}
 
+	// Vrne true, če igra zahteva partnerja.
 	public boolean pickKing() {
 		boolean kingApplicable;
 		if (gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One")
@@ -185,6 +145,7 @@ public class GameLogic {
 		return kingApplicable;
 	}
 
+	// Določi na koliko delov bo šel talon.
 	public int talonSplitter() {
 		int split = 0;
 		if (gamePicked == "One" || gamePicked == "SoloOne")
@@ -196,6 +157,7 @@ public class GameLogic {
 		return split;
 	}
 
+	// Vrne true, če je igra solo verzija normalne.
 	public boolean isSolo() {
 		boolean solo = false;
 		if (gamePicked == "SoloOne" || gamePicked == "SoloTwo" || gamePicked == "SoloThree")
@@ -203,6 +165,7 @@ public class GameLogic {
 		return solo;
 	}
 
+	// Vrne tabelo indeksov kart za menjavo pri talonu.
 	public int[] switchWithTalon() {
 		int[] index = { 0, 0, 0 };
 		if (talonSplitter() == 1 && il.isFlag(28))
@@ -241,6 +204,7 @@ public class GameLogic {
 		return index;
 	}
 
+	// Preveri kateri kralj je bil izbran.
 	public void kingPicker() {
 		if (il.isFlag(35))
 			kingPicked = 29;
@@ -252,14 +216,7 @@ public class GameLogic {
 			kingPicked = 53;
 	}
 
-	public int getKingPicked() {
-		return kingPicked;
-	}
-
-	public void setKingPicked(int kingPicked) {
-		this.kingPicked = kingPicked;
-	}
-
+	// Poišče partnerja glede na klicanega kralja.
 	public void findPartner() {
 		for (int i = 0; i < 12; i++) {
 			if (playerCards.get(i) == kingPicked)
@@ -283,10 +240,7 @@ public class GameLogic {
 		}
 	}
 
-	public String getPartner() {
-		return partner;
-	}
-
+	// Vrne true, če igra zahteva odprt talon.
 	public boolean openTalon() {
 		boolean temp = false;
 		if ((gamePicked == "Three" || gamePicked == "Two" || gamePicked == "One") && kingPicked != -1 || isSolo())
@@ -294,6 +248,7 @@ public class GameLogic {
 		return temp;
 	}
 
+	// Preveri izbrane napovedi.
 	public void announcePicker() {
 		if (il.isFlag(39))
 			announcements.put("Kings", true);
@@ -309,18 +264,7 @@ public class GameLogic {
 
 	}
 
-	public int getPlayedCard() {
-		return playedCard;
-	}
-
-	public void setPlayedCard(int playedCard) {
-		this.playedCard = playedCard;
-	}
-
-	public void setTempBottom(int tempBottom) {
-		this.tempBottom = tempBottom;
-	}
-
+	// Vrne, kdo začne krog igre.
 	public String roundStart() {
 		String temp = "";
 		if (gameRoundCounter == 0) {
@@ -336,6 +280,7 @@ public class GameLogic {
 
 	}
 
+	// Logika za igralca računalnika, ki vrže prvo karto.
 	public int cardPlayBot(List<Integer> bot) {
 		int temp = -1;
 		if (!bot.isEmpty()) {
@@ -355,6 +300,7 @@ public class GameLogic {
 		return temp;
 	}
 
+	// Logika igralca bota, ki vrže karto na že igrano karto.
 	public int cardComparatorBot(List<Integer> bot) {
 		int temp = -1;
 		int playedCardStr = ct.cardStrength(playedCard);
@@ -404,7 +350,8 @@ public class GameLogic {
 		}
 		return temp;
 	}
-	
+
+	// Logika, ki določi zmagovalca kroga, in mu prišteje točke kroga.
 	public void roundWinner() {
 		int temp = playedCard;
 
@@ -433,28 +380,28 @@ public class GameLogic {
 		if (temp == tempRight) {
 			gameRoundCounter = 1;
 			rightScoreCards.addAll(score);
-			if (gamePicked=="Klop"&&!talonCards.isEmpty()) {
+			if (gamePicked == "Klop" && !talonCards.isEmpty()) {
 				rightScoreCards.add(talonCards.get(0));
 				talonCards.remove(0);
 			}
 		} else if (temp == tempTop) {
 			gameRoundCounter = 2;
 			topScoreCards.addAll(score);
-			if (gamePicked=="Klop"&&!talonCards.isEmpty()) {
+			if (gamePicked == "Klop" && !talonCards.isEmpty()) {
 				topScoreCards.add(talonCards.get(0));
 				talonCards.remove(0);
 			}
 		} else if (temp == tempLeft) {
 			gameRoundCounter = 3;
 			leftScoreCards.addAll(score);
-			if (gamePicked=="Klop"&&!talonCards.isEmpty()) {
+			if (gamePicked == "Klop" && !talonCards.isEmpty()) {
 				leftScoreCards.add(talonCards.get(0));
 				talonCards.remove(0);
 			}
 		} else if (temp == tempBottom) {
 			gameRoundCounter = 0;
 			playerScoreCards.addAll(score);
-			if (gamePicked=="Klop"&&!talonCards.isEmpty()) {
+			if (gamePicked == "Klop" && !talonCards.isEmpty()) {
 				playerScoreCards.add(talonCards.get(0));
 				talonCards.remove(0);
 			}
@@ -462,12 +409,13 @@ public class GameLogic {
 			System.out.println("Error");
 
 	}
-	
-	public void  colorValatRoundWinner() {
+
+	// Logika, ki določi zmagovalca kroga na barvnem valatu.
+	public void colorValatRoundWinner() {
 		int temp = playedCard;
 		int[] comparables = { tempBottom, tempLeft, tempRight, tempTop };
 		List<Integer> score = Arrays.asList(tempBottom, tempLeft, tempRight, tempTop);
-		
+
 		if (ct.cardSuit(playedCard) == "SUIT.TAROK") {
 			for (int i : comparables)
 				if (ct.cardSuit(i) == "SUIT.TAROK" && ct.cardStrength(i) > ct.cardStrength(temp))
@@ -477,7 +425,7 @@ public class GameLogic {
 				if (ct.cardSuit(playedCard) == ct.cardSuit(i) && ct.cardStrength(i) > ct.cardStrength(temp))
 					temp = i;
 		}
-		
+
 		if (temp == tempRight) {
 			gameRoundCounter = 1;
 			rightScoreCards.addAll(score);
@@ -497,13 +445,14 @@ public class GameLogic {
 		} else
 			System.out.println("Error");
 
-		
 	}
 
+	// Metoda, ki doda obdržane karte iz talona.
 	public void addKeptCards(int cardIndex) {
 		keptCards.add(cardIndex);
 	}
 
+	// Določi uspele bonuse/napovedi trula, kralji in valat.
 	public void globalBonuses() {
 		if (partner == "SELF" || isSolo() || gamePicked == "SoloWithout") {
 			if (playerScoreCards.contains(29) && playerScoreCards.contains(37) && playerScoreCards.contains(45)
@@ -625,6 +574,22 @@ public class GameLogic {
 		}
 	}
 
+	// Določi uspela bonusa/napovedi kralj ultimo in pagat ultimo.
+	public void lastRoundBonuses() {
+
+		if (lastRoundList.contains(0) && announcements.get("Pagat") == true)
+			globalDiff += 50;
+		else if (lastRoundList.contains(0) && announcements.get("Pagat") == false)
+			globalDiff += 25;
+		if (lastRoundList.contains(kingPicked) && announcements.get("KUltimo") == true)
+			globalDiff += 20;
+		else if (lastRoundList.contains(kingPicked) && announcements.get("KUltimo") == false)
+			globalDiff += 10;
+
+	}
+
+	// Točkuje dobljene karte posameznih igralcev, vrne število točk, ki jih je
+	// dobil posameznik.
 	public int individualCountScoring(String player) {
 		List<Integer> temp = null;
 		int score = 0;
@@ -644,7 +609,6 @@ public class GameLogic {
 			if (temp.size() >= 3) {
 				int tempScore = 0;
 
-
 				for (int i = 0; i < 3; i++) {
 					int tempCard = temp.get(0);
 					temp.remove(0);
@@ -658,8 +622,7 @@ public class GameLogic {
 					} else {
 						tempScore += ct.cardStrength(tempCard) - 3;
 					}
-					
-						
+
 				}
 				tempScore -= 2;
 				score += tempScore;
@@ -683,10 +646,10 @@ public class GameLogic {
 						tempScore += ct.cardStrength(tempCard) - 3;
 						fullCount++;
 					}
-					
+
 				}
 				if (fullCount > 1)
-						tempScore -= fullCount - 1;
+					tempScore -= fullCount - 1;
 				score += tempScore;
 			}
 		}
@@ -694,23 +657,12 @@ public class GameLogic {
 		return score;
 	}
 
+	// Metoda za dodajanje kart na list lastRoundList.
 	public void addLastRound(int card) {
 		lastRoundList.add(card);
 	}
 
-	public void lastRoundBonuses() {
-
-		if (lastRoundList.contains(0) && announcements.get("Pagat") == true)
-			globalDiff += 50;
-		else if (lastRoundList.contains(0) && announcements.get("Pagat") == false)
-			globalDiff += 25;
-		if (lastRoundList.contains(kingPicked) && announcements.get("KUltimo") == true)
-			globalDiff += 20;
-		else if (lastRoundList.contains(kingPicked) && announcements.get("KUltimo") == false)
-			globalDiff += 10;
-
-	}
-
+	// Točkovanje normalnih iger.
 	public void normalScoring() {
 		lastRoundBonuses();
 		globalBonuses();
@@ -812,10 +764,7 @@ public class GameLogic {
 
 	}
 
-	public void setSpecialGameMade(boolean specialGameMade) {
-		this.specialGameMade = specialGameMade;
-	}
-
+	// Točkovanje igre valat.
 	public void ValatGameScoring() {
 		leftScore = 0;
 		topScore = 0;
@@ -826,6 +775,7 @@ public class GameLogic {
 			bottomScore = -500;
 	}
 
+	// Vrne true, če je igra ena izmed beračev.
 	public boolean isBeggarGame() {
 		boolean temp;
 		if (gamePicked == "OpenBeggar" || gamePicked == "Beggar")
@@ -835,6 +785,7 @@ public class GameLogic {
 		return temp;
 	}
 
+	// Točkovanje beračev.
 	public void beggarGamesScoring() {
 		leftScore = 0;
 		topScore = 0;
@@ -844,15 +795,16 @@ public class GameLogic {
 				bottomScore = 70;
 			else if (gamePicked == "OpenBeggar")
 				bottomScore = 90;
-		} else  {
+		} else {
 			if (gamePicked == "Beggar")
 				bottomScore = -70;
 			else if (gamePicked == "OpenBeggar")
 				bottomScore = -90;
 		}
-			
+
 	}
-	
+
+	// Točkovanje igre klopa.
 	public void klopGameScoring() {
 		bottomScore = 0;
 		leftScore = 0;
@@ -862,14 +814,14 @@ public class GameLogic {
 		int tempRight = individualCountScoring("RIGHT");
 		int tempTop = individualCountScoring("TOP");
 		int tempLeft = individualCountScoring("LEFT");
-		
-		if(tempPlayer>35) 
+
+		if (tempPlayer > 35)
 			bottomScore = -70;
-		else if(tempRight>35) 
+		else if (tempRight > 35)
 			rightScore = -70;
-		else if(tempTop>35) 
+		else if (tempTop > 35)
 			topScore = -70;
-		else if(tempLeft>35) 
+		else if (tempLeft > 35)
 			leftScore = -70;
 		else {
 			bottomScore = -tempPlayer;
@@ -878,16 +830,103 @@ public class GameLogic {
 			rightScore = -tempRight;
 		}
 	}
-	
+
+	// Točkovanje barvnega valata.
 	public void colorValatGameScoring() {
 		leftScore = 0;
 		topScore = 0;
 		rightScore = 0;
-		
+
 		if (specialGameMade)
 			bottomScore = 125;
 		else if (!specialGameMade)
 			bottomScore = -125;
+	}
+
+	// Metoda, ki ponastavi vrednosti nazaj na njihove začetne, za igranje več
+	// zaporednih iger.
+	public void reset() {
+		dealCards();
+		initAnnouncements();
+		gamePicked = null;
+		kingPicked = -1;
+		partner = null;
+		gameRoundCounter = 0;
+		globalDiff = 0;
+	}
+
+	// Vsi getterji in setterji za spremenljivke razreda.
+
+	public List<Integer> getPlayerCards() {
+		return playerCards;
+	}
+
+	public void setPlayerCards(List<Integer> playerCards) {
+		this.playerCards = playerCards;
+	}
+
+	public List<Integer> getlPlayerCards() {
+		return lPlayerCards;
+	}
+
+	public void setlPlayerCards(List<Integer> lPlayerCards) {
+		this.lPlayerCards = lPlayerCards;
+	}
+
+	public List<Integer> gettPlayerCards() {
+		return tPlayerCards;
+	}
+
+	public void settPlayerCards(List<Integer> tPlayerCards) {
+		this.tPlayerCards = tPlayerCards;
+	}
+
+	public List<Integer> getrPlayerCards() {
+		return rPlayerCards;
+	}
+
+	public void setrPlayerCards(List<Integer> rPlayerCards) {
+		this.rPlayerCards = rPlayerCards;
+	}
+
+	public List<Integer> getTalonCards() {
+		return talonCards;
+	}
+
+	public void setTalonCards(List<Integer> talonCards) {
+		this.talonCards = talonCards;
+	}
+
+	public String getGamePicked() {
+		return gamePicked;
+	}
+
+	public int getKingPicked() {
+		return kingPicked;
+	}
+
+	public void setKingPicked(int kingPicked) {
+		this.kingPicked = kingPicked;
+	}
+
+	public String getPartner() {
+		return partner;
+	}
+
+	public void setSpecialGameMade(boolean specialGameMade) {
+		this.specialGameMade = specialGameMade;
+	}
+
+	public int getPlayedCard() {
+		return playedCard;
+	}
+
+	public void setPlayedCard(int playedCard) {
+		this.playedCard = playedCard;
+	}
+
+	public void setTempBottom(int tempBottom) {
+		this.tempBottom = tempBottom;
 	}
 
 	public int getBottomScore() {
